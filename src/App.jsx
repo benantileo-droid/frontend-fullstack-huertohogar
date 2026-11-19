@@ -37,6 +37,7 @@ import AdminProductoForm from "./pages/admin/AdminProductoForm";
 import ProductosCriticos from "./pages/admin/ProductosCriticos";
 import AdminCategorias from "./pages/admin/AdminCategorias";
 import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
+import { useAuth } from "./context/AuthContext";
 
 export default function App() {
 
@@ -70,13 +71,7 @@ export default function App() {
     }
   });
 
-  const [usuarioActual, setUsuarioActual] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("usuarioActual")) || null;
-    } catch {
-      return null;
-    }
-  });
+ const { usuarioActual, cerrarSesion } = useAuth();
 
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todas");
@@ -93,16 +88,7 @@ export default function App() {
   // GUARDAR SESION Y CARRITO
   // =========================
 
-  useEffect(() => {
-    if (usuarioActual) {
-      localStorage.setItem(
-        "usuarioActual",
-        JSON.stringify(usuarioActual)
-      );
-    } else {
-      localStorage.removeItem("usuarioActual");
-    }
-  }, [usuarioActual]);
+
 
   useEffect(() => {
     localStorage.setItem(
@@ -119,9 +105,7 @@ export default function App() {
     setUsuarios(crearUsuario(nuevoUsuario));
   };
 
-  const handleLogin = (usuario) => {
-    setUsuarioActual(usuario);
-  };
+
 
   const handleCrearUsuario = (datos) => {
     setUsuarios(crearUsuario(datos));
@@ -151,13 +135,22 @@ export default function App() {
     setUsuarios(eliminarUsuario(id));
   };
 
-  const handleLogout = () => {
-    setUsuarioActual(null);
-    setModoAdmin(false);
-    setMostrarFormulario(false);
-    setProductoEditando(null);
-    navigate("/");
-  };
+ const handleLogout = () => {
+  // Eliminar JWT y cerrar la sesion real
+  cerrarSesion();
+
+  // Limpiar el carrito para no compartirlo
+  // con otro usuario que inicie sesion
+  setCarrito([]);
+
+  // Cerrar las herramientas de administracion
+  setModoAdmin(false);
+  setMostrarFormulario(false);
+  setProductoEditando(null);
+
+  // Regresar al inicio
+  navigate("/");
+};
 
   // =========================
   // COMPRA ANTIGUA
@@ -661,10 +654,7 @@ export default function App() {
         <Route
           path="/login"
           element={
-            <Login
-              usuarios={usuarios}
-              onLogin={handleLogin}
-            />
+            <Login />
           }
         />
 
