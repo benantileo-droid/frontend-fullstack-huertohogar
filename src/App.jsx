@@ -5,6 +5,7 @@ import {
   Routes,
   Route,
   Link,
+  Navigate,
   useNavigate,
   useLocation,
 } from "react-router-dom";
@@ -22,17 +23,11 @@ import { useCarrito } from "./context/CarritoContext";
 import api from "./services/api";
 
 // ==========================================
-// FUNCIONES LOCALES AUN PENDIENTES
-// DE MIGRAR AL BACKEND
+// DATOS ANTIGUOS PENDIENTES DE MIGRAR
+// SOLO EL DETALLE DE ORDENES
 // ==========================================
 
-import {
-  getUsuarios,
-  crearUsuario,
-  actualizarUsuario,
-  eliminarUsuario,
-  getOrdenes,
-} from "./data/db";
+import { getOrdenes } from "./data/db";
 
 // ==========================================
 // PAGINAS DE LA TIENDA
@@ -69,12 +64,11 @@ import AdminProductos from "./pages/admin/AdminProductos";
 import AdminProductoForm from "./pages/admin/AdminProductoForm";
 import ProductosCriticos from "./pages/admin/ProductosCriticos";
 import AdminCategorias from "./pages/admin/AdminCategorias";
-import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
 
 export default function App() {
 
   // ==========================================
-  // PRODUCTOS REALES DESDE MYSQL
+  // PRODUCTOS DESDE MYSQL
   // ==========================================
 
   const {
@@ -85,8 +79,7 @@ export default function App() {
   } = useProductosApi();
 
   // ==========================================
-  // CATEGORIAS REALES DESDE MYSQL
-  // NUEVO HOOK
+  // CATEGORIAS DESDE MYSQL
   // ==========================================
 
   const {
@@ -119,14 +112,6 @@ export default function App() {
   } = useCarrito();
 
   // ==========================================
-  // DATOS LOCALES AUN PENDIENTES
-  // ==========================================
-
-  const [usuarios, setUsuarios] = useState(getUsuarios);
-
-  const [ordenes] = useState(getOrdenes);
-
-  // ==========================================
   // ESTADOS DE LA TIENDA
   // ==========================================
 
@@ -142,6 +127,13 @@ export default function App() {
   const eliminandoProductoRef = useRef(false);
 
   // ==========================================
+  // DETALLE ANTIGUO DE ORDENES
+  // PENDIENTE DE MIGRAR
+  // ==========================================
+
+  const [ordenes] = useState(getOrdenes);
+
+  // ==========================================
   // NAVEGACION
   // ==========================================
 
@@ -155,11 +147,8 @@ export default function App() {
     usuarioActual?.rol === "admin";
 
   // ==========================================
-  // SINCRONIZAR FILTRO DE CATEGORIAS
+  // SINCRONIZAR CATEGORIAS
   // ==========================================
-
-  // Si una categoria fue eliminada o renombrada
-  // en MySQL, evitamos mantener un filtro invalido.
 
   useEffect(() => {
 
@@ -203,7 +192,7 @@ export default function App() {
   };
 
   // ==========================================
-  // PRODUCTOS - CREAR DESDE MYSQL
+  // PRODUCTOS - NUEVO
   // ==========================================
 
   const handleNewProduct = () => {
@@ -214,7 +203,7 @@ export default function App() {
   };
 
   // ==========================================
-  // PRODUCTOS - EDITAR DESDE MYSQL
+  // PRODUCTOS - EDITAR
   // ==========================================
 
   const handleEditProduct = (producto) => {
@@ -260,11 +249,12 @@ export default function App() {
         String(item.id) === String(id)
     );
 
-    const nombre = producto?.nombre ?? `#${id}`;
+    const nombre =
+      producto?.nombre ?? `#${id}`;
 
     const confirmar = window.confirm(
       `¿Seguro que deseas eliminar "${nombre}"?\n\n` +
-      "El producto será eliminado de MySQL."
+      "El producto se eliminará de MySQL."
     );
 
     if (!confirmar) return;
@@ -323,7 +313,7 @@ export default function App() {
       } else if (estado === 409) {
 
         window.alert(
-          "No se pudo eliminar el producto porque existen datos asociados."
+          "No se puede eliminar el producto porque tiene datos asociados."
         );
 
       } else {
@@ -339,49 +329,6 @@ export default function App() {
       eliminandoProductoRef.current = false;
 
     }
-
-  };
-
-  // ==========================================
-  // USUARIOS - TODAVIA LOCALES
-  // ==========================================
-
-  const handleCrearUsuario = (datos) => {
-
-    setUsuarios(
-      crearUsuario(datos)
-    );
-  };
-
-  const handleActualizarUsuario = (id, cambios) => {
-
-    const datos =
-      String(usuarioActual?.id) === String(id)
-        ? {
-            ...cambios,
-            rol: usuarioActual.rol,
-          }
-        : cambios;
-
-    setUsuarios(
-      actualizarUsuario(id, datos)
-    );
-  };
-
-  const handleEliminarUsuario = (id) => {
-
-    if (String(usuarioActual?.id) === String(id)) {
-
-      window.alert(
-        "No puedes eliminar tu propio usuario."
-      );
-
-      return;
-    }
-
-    setUsuarios(
-      eliminarUsuario(id)
-    );
   };
 
   // ==========================================
@@ -408,21 +355,29 @@ export default function App() {
   );
 
   // ==========================================
-  // MENSAJE DE CARGA DE CATEGORIAS
+  // MENSAJES DE CATEGORIAS
   // ==========================================
 
   const mensajeCategorias = cargandoCategorias ? (
+
     <div className="container py-5">
+
       <div className="alert alert-info">
         Cargando categorías desde MySQL...
       </div>
+
     </div>
+
   ) : errorCategorias ? (
+
     <div className="container py-5">
+
       <div className="alert alert-danger">
         {errorCategorias}
       </div>
+
     </div>
+
   ) : null;
 
   // ==========================================
@@ -434,7 +389,7 @@ export default function App() {
     <div className="bg-light min-vh-100 d-flex flex-column">
 
       {/* ==================================== */}
-      {/* NAVBAR */}
+      {/* BARRA DE NAVEGACION */}
       {/* ==================================== */}
 
       {!esRutaAdmin && (
@@ -497,17 +452,23 @@ export default function App() {
                   Contacto
                 </Link>
 
-                {/* VISITANTE */}
+                {/* USUARIO SIN SESION */}
 
                 {!usuarioActual ? (
 
                   <>
 
-                    <Link className="nav-link" to="/registro">
+                    <Link
+                      className="nav-link"
+                      to="/registro"
+                    >
                       Registro
                     </Link>
 
-                    <Link className="nav-link" to="/login">
+                    <Link
+                      className="nav-link"
+                      to="/login"
+                    >
                       Iniciar Sesión
                     </Link>
 
@@ -630,7 +591,7 @@ export default function App() {
       )}
 
       {/* ==================================== */}
-      {/* RUTAS DE LA TIENDA */}
+      {/* RUTAS DE LA APLICACION */}
       {/* ==================================== */}
 
       <Routes>
@@ -683,9 +644,7 @@ export default function App() {
           }
         />
 
-        {/* ================================= */}
-        {/* CATEGORIAS REALES DESDE MYSQL */}
-        {/* ================================= */}
+        {/* CATEGORIAS */}
 
         <Route
           path="/categorias"
@@ -883,21 +842,22 @@ export default function App() {
           }
         >
 
-          {/* DASHBOARD */}
+          {/* DASHBOARD REAL */}
 
           <Route
             index
             element={<Dashboard />}
           />
 
-          {/* ORDENES */}
+          {/* ORDENES REALES */}
 
           <Route
             path="ordenes"
             element={<Ordenes />}
           />
 
-          {/* DETALLE ANTIGUO DE BOLETA */}
+          {/* DETALLE DE ORDEN ANTIGUO */}
+          {/* LO MIGRAREMOS EN OTRA ETAPA */}
 
           <Route
             path="ordenes/:numero"
@@ -906,45 +866,41 @@ export default function App() {
             }
           />
 
-          {/* USUARIOS - TODAVIA LOCALES */}
+          {/* ================================= */}
+          {/* USUARIOS - MYSQL */}
+          {/* ================================= */}
 
           <Route
             path="usuarios"
-            element={
-
-              <UsuariosAdmin
-                usuarios={usuarios}
-                onDelete={handleEliminarUsuario}
-              />
-
-            }
+            element={<UsuariosAdmin />}
           />
+
+          {/* RUTAS ANTIGUAS DE USUARIOS */}
+          {/* REDIRIGEN AL PANEL REAL */}
 
           <Route
             path="usuarios/nuevo"
             element={
-
-              <AdminUsuarioForm
-                usuarios={usuarios}
-                onCreate={handleCrearUsuario}
+              <Navigate
+                to="/admin/usuarios"
+                replace
               />
-
             }
           />
 
           <Route
             path="usuarios/:id/editar"
             element={
-
-              <AdminUsuarioForm
-                usuarios={usuarios}
-                onUpdate={handleActualizarUsuario}
+              <Navigate
+                to="/admin/usuarios"
+                replace
               />
-
             }
           />
 
+          {/* ================================= */}
           {/* PRODUCTOS - MYSQL */}
+          {/* ================================= */}
 
           <Route
             path="productos"
@@ -952,8 +908,6 @@ export default function App() {
               <AdminProductos productos={productos} />
             }
           />
-
-          {/* CREAR PRODUCTO */}
 
           <Route
             path="productos/nuevo"
@@ -969,8 +923,6 @@ export default function App() {
 
             }
           />
-
-          {/* EDITAR PRODUCTO */}
 
           <Route
             path="productos/:id/editar"
@@ -1000,9 +952,7 @@ export default function App() {
             }
           />
 
-          {/* ================================= */}
           {/* CATEGORIAS - MYSQL */}
-          {/* ================================= */}
 
           <Route
             path="categorias"
@@ -1022,17 +972,13 @@ export default function App() {
         <div className="container text-center">
 
           <p className="m-0 fw-light">
-
             🌱 <strong>Huerto Hogar</strong> -
             Evaluación FullStack DSY1104 | Duoc UC
-
           </p>
 
           <small className="text-secondary">
-
             Desarrollado con React, Bootstrap,
             Jasmine y Karma
-
           </small>
 
         </div>
