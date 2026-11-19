@@ -8,7 +8,6 @@ import { getProductos, crearProducto, actualizarProducto, eliminarProducto,
 } from './data/db';
 import { precioFinal } from './utils/precios';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-
 import Home from './pages/Home';
 import Productos from './pages/Productos';
 import Categoria from './pages/Categoria';
@@ -35,13 +34,14 @@ import AdminProductoForm from './pages/admin/AdminProductoForm';
 import ProductosCriticos from './pages/admin/ProductosCriticos';
 import AdminCategorias from './pages/admin/AdminCategorias';
 import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
+import useProductosApi from "./hooks/useProductosApi";
 export default function App() {
 
   // =========================
   // ESTADOS
   // =========================
 
-  const [productos, setProductos] = useState(getProductos);
+  const { productos, setProductos } = useProductosApi();
 
   const [categorias, setCategorias] = useState(getCategorias);
 
