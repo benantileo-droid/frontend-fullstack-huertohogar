@@ -1,5 +1,5 @@
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   Routes,
@@ -14,14 +14,16 @@ import {
 // ==========================================
 
 import useProductosApi from "./hooks/useProductosApi";
+import useCategoriasApi from "./hooks/useCategoriasApi";
+
 import { useAuth } from "./context/AuthContext";
 import { useCarrito } from "./context/CarritoContext";
 
 import api from "./services/api";
 
 // ==========================================
-// BASE DE DATOS LOCAL
-// SOLO USUARIOS, CATEGORIAS Y ORDENES ANTIGUAS
+// FUNCIONES LOCALES AUN PENDIENTES
+// DE MIGRAR AL BACKEND
 // ==========================================
 
 import {
@@ -29,10 +31,6 @@ import {
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
-  getCategorias,
-  crearCategoria,
-  actualizarCategoria,
-  eliminarCategoria,
   getOrdenes,
 } from "./data/db";
 
@@ -87,6 +85,17 @@ export default function App() {
   } = useProductosApi();
 
   // ==========================================
+  // CATEGORIAS REALES DESDE MYSQL
+  // NUEVO HOOK
+  // ==========================================
+
+  const {
+    categorias,
+    cargandoCategorias,
+    errorCategorias,
+  } = useCategoriasApi();
+
+  // ==========================================
   // AUTENTICACION JWT
   // ==========================================
 
@@ -110,32 +119,25 @@ export default function App() {
   } = useCarrito();
 
   // ==========================================
-  // ESTADOS QUE TODAVIA SON LOCALES
+  // DATOS LOCALES AUN PENDIENTES
   // ==========================================
 
-  const [categorias, setCategorias] =
-    useState(getCategorias);
+  const [usuarios, setUsuarios] = useState(getUsuarios);
 
-  const [usuarios, setUsuarios] =
-    useState(getUsuarios);
-
-  const [ordenes] =
-    useState(getOrdenes);
+  const [ordenes] = useState(getOrdenes);
 
   // ==========================================
   // ESTADOS DE LA TIENDA
   // ==========================================
 
-  const [busqueda, setBusqueda] =
-    useState("");
+  const [busqueda, setBusqueda] = useState("");
 
   const [
     categoriaSeleccionada,
     setCategoriaSeleccionada,
   ] = useState("Todas");
 
-  const [modoAdmin, setModoAdmin] =
-    useState(false);
+  const [modoAdmin, setModoAdmin] = useState(false);
 
   const eliminandoProductoRef = useRef(false);
 
@@ -153,6 +155,39 @@ export default function App() {
     usuarioActual?.rol === "admin";
 
   // ==========================================
+  // SINCRONIZAR FILTRO DE CATEGORIAS
+  // ==========================================
+
+  // Si una categoria fue eliminada o renombrada
+  // en MySQL, evitamos mantener un filtro invalido.
+
+  useEffect(() => {
+
+    if (cargandoCategorias || errorCategorias) {
+      return;
+    }
+
+    if (categoriaSeleccionada === "Todas") {
+      return;
+    }
+
+    const existe = categorias.some(
+      (categoria) =>
+        categoria.nombre === categoriaSeleccionada
+    );
+
+    if (!existe) {
+      setCategoriaSeleccionada("Todas");
+    }
+
+  }, [
+    categorias,
+    categoriaSeleccionada,
+    cargandoCategorias,
+    errorCategorias,
+  ]);
+
+  // ==========================================
   // CERRAR SESION
   // ==========================================
 
@@ -168,11 +203,8 @@ export default function App() {
   };
 
   // ==========================================
-  // PRODUCTOS - CREAR
+  // PRODUCTOS - CREAR DESDE MYSQL
   // ==========================================
-
-  // El formulario de creación está conectado
-  // a Spring Boot en AdminProductoForm.jsx.
 
   const handleNewProduct = () => {
 
@@ -182,11 +214,8 @@ export default function App() {
   };
 
   // ==========================================
-  // PRODUCTOS - EDITAR
+  // PRODUCTOS - EDITAR DESDE MYSQL
   // ==========================================
-
-  // Ya no usamos el formulario local.
-  // Redirigimos al formulario conectado a MySQL.
 
   const handleEditProduct = (producto) => {
 
@@ -199,19 +228,12 @@ export default function App() {
 
     if (id == null) return;
 
-    navigate(
-      `/admin/productos/${id}/editar`
-    );
+    navigate(`/admin/productos/${id}/editar`);
   };
 
   // ==========================================
-  // PRODUCTOS - ELIMINAR
+  // PRODUCTOS - ELIMINAR DESDE MYSQL
   // ==========================================
-
-  // Esta función se utiliza desde el
-  // catálogo cuando el modo Admin está activo.
-  //
-  // La eliminación ocurre realmente en MySQL.
 
   const handleDeleteProduct = async (productoOId) => {
 
@@ -238,8 +260,7 @@ export default function App() {
         String(item.id) === String(id)
     );
 
-    const nombre =
-      producto?.nombre ?? `#${id}`;
+    const nombre = producto?.nombre ?? `#${id}`;
 
     const confirmar = window.confirm(
       `¿Seguro que deseas eliminar "${nombre}"?\n\n` +
@@ -260,9 +281,6 @@ export default function App() {
           },
         }
       );
-
-      // Solo actualizamos React cuando
-      // Spring Boot confirma la eliminación.
 
       setProductos((actuales) =>
         actuales.filter(
@@ -299,21 +317,19 @@ export default function App() {
       } else if (estado === 404) {
 
         window.alert(
-          "El producto no existe en MySQL."
+          "El producto ya no existe en MySQL."
         );
 
       } else if (estado === 409) {
 
         window.alert(
-          "No se puede eliminar el producto porque existe un conflicto con sus datos."
+          "No se pudo eliminar el producto porque existen datos asociados."
         );
 
       } else {
 
         window.alert(
-          "No se pudo eliminar el producto.\n\n" +
-          "Comprueba la conexión con Spring Boot. " +
-          "Si tiene compras asociadas, MySQL podría impedir la eliminación."
+          "No se pudo eliminar el producto. Revisa Spring Boot."
         );
 
       }
@@ -323,11 +339,11 @@ export default function App() {
       eliminandoProductoRef.current = false;
 
     }
+
   };
 
   // ==========================================
-  // USUARIOS
-  // TODAVIA LOCALES
+  // USUARIOS - TODAVIA LOCALES
   // ==========================================
 
   const handleCrearUsuario = (datos) => {
@@ -340,7 +356,7 @@ export default function App() {
   const handleActualizarUsuario = (id, cambios) => {
 
     const datos =
-      usuarioActual?.id === id
+      String(usuarioActual?.id) === String(id)
         ? {
             ...cambios,
             rol: usuarioActual.rol,
@@ -354,7 +370,7 @@ export default function App() {
 
   const handleEliminarUsuario = (id) => {
 
-    if (usuarioActual?.id === id) {
+    if (String(usuarioActual?.id) === String(id)) {
 
       window.alert(
         "No puedes eliminar tu propio usuario."
@@ -365,36 +381,6 @@ export default function App() {
 
     setUsuarios(
       eliminarUsuario(id)
-    );
-  };
-
-  // ==========================================
-  // CATEGORIAS
-  // TODAVIA LOCALES
-  // ==========================================
-
-  const handleCrearCategoria = (datos) => {
-
-    setCategorias(
-      crearCategoria(datos)
-    );
-  };
-
-  const handleActualizarCategoria = (id, cambios) => {
-
-    setCategorias(
-      actualizarCategoria(id, cambios)
-    );
-
-    // No modificamos productos en localStorage.
-    // La actualización real de categorías
-    // se conectará al backend posteriormente.
-  };
-
-  const handleEliminarCategoria = (id) => {
-
-    setCategorias(
-      eliminarCategoria(id)
     );
   };
 
@@ -420,6 +406,24 @@ export default function App() {
       return coincideNombre && coincideCategoria;
     }
   );
+
+  // ==========================================
+  // MENSAJE DE CARGA DE CATEGORIAS
+  // ==========================================
+
+  const mensajeCategorias = cargandoCategorias ? (
+    <div className="container py-5">
+      <div className="alert alert-info">
+        Cargando categorías desde MySQL...
+      </div>
+    </div>
+  ) : errorCategorias ? (
+    <div className="container py-5">
+      <div className="alert alert-danger">
+        {errorCategorias}
+      </div>
+    </div>
+  ) : null;
 
   // ==========================================
   // INTERFAZ PRINCIPAL
@@ -493,23 +497,17 @@ export default function App() {
                   Contacto
                 </Link>
 
-                {/* USUARIO SIN SESION */}
+                {/* VISITANTE */}
 
                 {!usuarioActual ? (
 
                   <>
 
-                    <Link
-                      className="nav-link"
-                      to="/registro"
-                    >
+                    <Link className="nav-link" to="/registro">
                       Registro
                     </Link>
 
-                    <Link
-                      className="nav-link"
-                      to="/login"
-                    >
+                    <Link className="nav-link" to="/login">
                       Iniciar Sesión
                     </Link>
 
@@ -518,6 +516,8 @@ export default function App() {
                 ) : (
 
                   <>
+
+                    {/* USUARIO AUTENTICADO */}
 
                     <span className="nav-link text-white-50">
                       👤 {usuarioActual.nombre}
@@ -531,12 +531,21 @@ export default function App() {
                       Cerrar sesión
                     </button>
 
-                    <Link
-                      className="nav-link"
-                      to="/mis-compras"
-                    >
-                      📦 Mis Compras
-                    </Link>
+                    {/* HISTORIAL DE COMPRAS */}
+
+                    {(
+                      usuarioActual.rol === "cliente" ||
+                      usuarioActual.rol === "admin"
+                    ) && (
+
+                      <Link
+                        className="nav-link"
+                        to="/mis-compras"
+                      >
+                        📦 Mis Compras
+                      </Link>
+
+                    )}
 
                   </>
 
@@ -557,10 +566,7 @@ export default function App() {
 
                 {/* CARRITO */}
 
-                <Link
-                  className="nav-link"
-                  to="/carrito"
-                >
+                <Link className="nav-link" to="/carrito">
                   🛒 ({carrito.length})
                 </Link>
 
@@ -579,8 +585,6 @@ export default function App() {
                     setBusqueda(e.target.value)
                   }
                 />
-
-                {/* SOLO ADMIN */}
 
                 {esAdmin && (
 
@@ -619,7 +623,6 @@ export default function App() {
               </div>
 
             </div>
-
           </div>
 
         </nav>
@@ -627,7 +630,7 @@ export default function App() {
       )}
 
       {/* ==================================== */}
-      {/* RUTAS DE LA APLICACION */}
+      {/* RUTAS DE LA TIENDA */}
       {/* ==================================== */}
 
       <Routes>
@@ -645,38 +648,58 @@ export default function App() {
           path="/productos"
           element={
 
-            <Productos
-              productos={productos}
-              categorias={categorias}
-              productosFiltrados={productosFiltrados}
-              cargandoProductos={cargando}
-              errorProductos={error}
-              recargarProductos={() =>
-                window.location.reload()
-              }
-              categoriaSeleccionada={categoriaSeleccionada}
-              setCategoriaSeleccionada={setCategoriaSeleccionada}
-              onAddToCart={agregarAlCarrito}
-              onDelete={handleDeleteProduct}
-              onEdit={handleEditProduct}
-              modoAdmin={modoAdmin && esAdmin}
-              onNewProduct={handleNewProduct}
-            />
+            <>
+
+              {errorCategorias && (
+
+                <div className="container mt-3">
+                  <div className="alert alert-warning mb-0">
+                    {errorCategorias}
+                  </div>
+                </div>
+
+              )}
+
+              <Productos
+                productos={productos}
+                categorias={categorias}
+                productosFiltrados={productosFiltrados}
+                cargandoProductos={cargando}
+                errorProductos={error}
+                recargarProductos={() =>
+                  window.location.reload()
+                }
+                categoriaSeleccionada={categoriaSeleccionada}
+                setCategoriaSeleccionada={setCategoriaSeleccionada}
+                onAddToCart={agregarAlCarrito}
+                onDelete={handleDeleteProduct}
+                onEdit={handleEditProduct}
+                modoAdmin={modoAdmin && esAdmin}
+                onNewProduct={handleNewProduct}
+              />
+
+            </>
 
           }
         />
 
-        {/* CATEGORIAS */}
+        {/* ================================= */}
+        {/* CATEGORIAS REALES DESDE MYSQL */}
+        {/* ================================= */}
 
         <Route
           path="/categorias"
           element={
 
-            <Categoria
-              categorias={categorias}
-              productos={productos}
-              onAddToCart={agregarAlCarrito}
-            />
+            mensajeCategorias ?? (
+
+              <Categoria
+                categorias={categorias}
+                productos={productos}
+                onAddToCart={agregarAlCarrito}
+              />
+
+            )
 
           }
         />
@@ -685,11 +708,15 @@ export default function App() {
           path="/categorias/:nombre"
           element={
 
-            <Categoria
-              categorias={categorias}
-              productos={productos}
-              onAddToCart={agregarAlCarrito}
-            />
+            mensajeCategorias ?? (
+
+              <Categoria
+                categorias={categorias}
+                productos={productos}
+                onAddToCart={agregarAlCarrito}
+              />
+
+            )
 
           }
         />
@@ -724,7 +751,7 @@ export default function App() {
           }
         />
 
-        {/* CHECKOUT REAL */}
+        {/* CHECKOUT */}
 
         <Route
           path="/checkout"
@@ -778,7 +805,7 @@ export default function App() {
           element={<Login />}
         />
 
-        {/* HISTORIAL DE COMPRAS */}
+        {/* MIS COMPRAS */}
 
         <Route
           path="/mis-compras"
@@ -856,14 +883,14 @@ export default function App() {
           }
         >
 
-          {/* DASHBOARD REAL */}
+          {/* DASHBOARD */}
 
           <Route
             index
             element={<Dashboard />}
           />
 
-          {/* ORDENES REALES */}
+          {/* ORDENES */}
 
           <Route
             path="ordenes"
@@ -926,29 +953,41 @@ export default function App() {
             }
           />
 
+          {/* CREAR PRODUCTO */}
+
           <Route
             path="productos/nuevo"
             element={
 
-              <AdminProductoForm
-                categorias={categorias}
-              />
+              mensajeCategorias ?? (
+
+                <AdminProductoForm
+                  categorias={categorias}
+                />
+
+              )
 
             }
           />
+
+          {/* EDITAR PRODUCTO */}
 
           <Route
             path="productos/:id/editar"
             element={
 
-              <AdminProductoForm
-                categorias={categorias}
-              />
+              mensajeCategorias ?? (
+
+                <AdminProductoForm
+                  categorias={categorias}
+                />
+
+              )
 
             }
           />
 
-          {/* INVENTARIO */}
+          {/* PRODUCTOS CRITICOS */}
 
           <Route
             path="productos-criticos"
@@ -961,21 +1000,13 @@ export default function App() {
             }
           />
 
-          {/* CATEGORIAS - TODAVIA LOCALES */}
+          {/* ================================= */}
+          {/* CATEGORIAS - MYSQL */}
+          {/* ================================= */}
 
           <Route
             path="categorias"
-            element={
-
-              <AdminCategorias
-                categorias={categorias}
-                productos={productos}
-                onCreate={handleCrearCategoria}
-                onUpdate={handleActualizarCategoria}
-                onDelete={handleEliminarCategoria}
-              />
-
-            }
+            element={<AdminCategorias />}
           />
 
         </Route>
