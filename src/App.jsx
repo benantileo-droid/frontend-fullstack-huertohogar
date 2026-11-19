@@ -12,6 +12,7 @@ import {
 import useProductosApi from "./hooks/useProductosApi";
 import { useAuth } from "./context/AuthContext";
 import { useCarrito } from "./context/CarritoContext";
+import useProductosApi from "./hooks/useProductosApi";
 
 // BASE DE DATOS LOCAL
 // Estas funciones se migraran posteriormente al backend
