@@ -1,150 +1,287 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { regiones } from '../data/regiones';
 
-// Cambia a 0 para mostrar siempre el pago rechazado (útil en la presentación)
-// o a 1 para mostrar siempre el pago aprobado.
-const PROBABILIDAD_EXITO = 0.8;
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+import { regiones } from "../data/regiones";
+import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 
 const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function Campo({ label, name, value, onChange, error, placeholder, type = 'text', requerido = true }) {
+const formatoPrecio = (valor) =>
+  Number(valor).toLocaleString("es-CL");
+
+function Campo({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  placeholder,
+  type = "text",
+  requerido = true,
+  disabled = false,
+}) {
   return (
     <div className="mb-3">
-      <label className="form-label fw-semibold">
+      <label htmlFor={name} className="form-label fw-semibold">
         {label}
-        {requerido && <span className="text-danger">*</span>}
+        {requerido && <span className="text-danger"> *</span>}
       </label>
+
       <input
+        id={name}
         type={type}
         name={name}
-        className={`form-control ${error ? 'is-invalid' : ''}`}
+        className={`form-control ${error ? "is-invalid" : ""}`}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        disabled={disabled}
       />
-      {error && <div className="invalid-feedback">{error}</div>}
+
+      {error && (
+        <div className="invalid-feedback">{error}</div>
+      )}
     </div>
   );
 }
 
 export default function Checkout({
-  carrito,
-  productos,
+  carrito = [],
   onClearCart,
-  usuarioActual,
-  onCompraExitosa
 }) {
   const navigate = useNavigate();
 
-  // Si el usuario inició sesión, se autocompletan sus datos
-  const regionInicial =
-    regiones.find((r) => r.comunas.includes(usuarioActual?.comuna))?.nombre || '';
+  const { usuarioActual, autenticado } = useAuth();
 
   const [datos, setDatos] = useState({
-    nombre: usuarioActual?.nombre || '',
-    apellidos: '',
-    correo: usuarioActual?.email || '',
-    calle: usuarioActual?.direccion || '',
-    departamento: '',
-    region: regionInicial,
-    comuna: regionInicial ? usuarioActual.comuna : '',
-    indicaciones: '',
-    tipoEntrega: 'Despacho estándar (3 a 5 días)'
+    nombre:
+      usuarioActual?.nombre?.includes("@")
+        ? ""
+        : usuarioActual?.nombre || "",
+    apellidos: "",
+    correo: usuarioActual?.correo || "",
+    calle: "",
+    departamento: "",
+    region: "",
+    comuna: "",
+    indicaciones: "",
+    tipoEntrega: "Despacho estándar (3 a 5 días)",
   });
 
   const [errores, setErrores] = useState({});
+  const [cargando, setCargando] = useState(false);
+  const [errorGeneral, setErrorGeneral] = useState("");
 
   const comunasDisponibles =
-    regiones.find((r) => r.nombre === datos.region)?.comunas || [];
+    regiones.find((r) => r.nombre === datos.region)
+      ?.comunas || [];
 
-  const total = carrito.reduce(
-    (acc, producto) => acc + producto.precio * producto.cantidad,
+  // Este total es solo visual.
+  // Spring Boot calculara el total real.
+  const totalEstimado = carrito.reduce(
+    (total, producto) =>
+      total + producto.precio * producto.cantidad,
     0
   );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setDatos((prev) =>
-      name === 'region'
-        ? { ...prev, region: value, comuna: '' }
-        : { ...prev, [name]: value }
+    setDatos((anterior) =>
+      name === "region"
+        ? { ...anterior, region: value, comuna: "" }
+        : { ...anterior, [name]: value }
     );
+
+    setErrores((anterior) => ({
+      ...anterior,
+      [name]: "",
+    }));
+
+    setErrorGeneral("");
   };
 
+  // Validar los datos de entrega
   const validar = () => {
     const nuevos = {};
 
-    if (!datos.nombre.trim()) nuevos.nombre = 'El nombre es obligatorio';
-    if (!datos.apellidos.trim()) nuevos.apellidos = 'Los apellidos son obligatorios';
-
-    if (!datos.correo.trim()) {
-      nuevos.correo = 'El correo es obligatorio';
-    } else if (!regexEmail.test(datos.correo)) {
-      nuevos.correo = 'El formato del correo no es válido';
+    if (!datos.nombre.trim()) {
+      nuevos.nombre = "El nombre es obligatorio";
     }
 
-    if (!datos.calle.trim()) nuevos.calle = 'La calle es obligatoria';
-    if (!datos.region) nuevos.region = 'Selecciona una región';
-    if (!datos.comuna) nuevos.comuna = 'Selecciona una comuna';
+    if (!datos.apellidos.trim()) {
+      nuevos.apellidos = "Los apellidos son obligatorios";
+    }
+
+    if (!datos.correo.trim()) {
+      nuevos.correo = "El correo es obligatorio";
+    } else if (!regexEmail.test(datos.correo.trim())) {
+      nuevos.correo = "El correo no es válido";
+    }
+
+    if (!datos.calle.trim()) {
+      nuevos.calle = "La calle es obligatoria";
+    }
+
+    if (!datos.region) {
+      nuevos.region = "Selecciona una región";
+    }
+
+    if (!datos.comuna) {
+      nuevos.comuna = "Selecciona una comuna";
+    }
 
     setErrores(nuevos);
+
     return Object.keys(nuevos).length === 0;
   };
 
-  const confirmarCompra = () => {
-    if (!validar()) return;
+  // Registrar la compra en Spring Boot
+  const confirmarCompra = async () => {
+    if (cargando) return;
 
-  const sinStock = carrito.find((item) => {
-  const prod = productos.find((p) => p.id === item.id);
-  return typeof prod?.stock === "number" && item.cantidad > prod.stock;
-});
-if (sinStock) {
-  alert("No hay stock suficiente de " + sinStock.nombre);
-  return;
-}
+    setErrorGeneral("");
 
-    const orden = {
-      numero: 'ORD-' + Date.now(),
-      fecha: new Date().toLocaleString('es-CL'),
-      nombre: `${datos.nombre} ${datos.apellidos}`.trim(),
-      correo: datos.correo,
-      direccion:
-        datos.calle +
-        (datos.departamento ? `, Depto ${datos.departamento}` : ''),
-      region: datos.region,
-      comuna: datos.comuna,
-      indicaciones: datos.indicaciones,
-      tipoEntrega: datos.tipoEntrega,
-      productos: carrito,
-      total
-    };
-
-    // Simulación del pago
-    const pagoAprobado = Math.random() < PROBABILIDAD_EXITO;
-
-    if (!pagoAprobado) {
-      localStorage.setItem('ordenFallida', JSON.stringify(orden));
-      navigate('/compra-fallida');
+    if (!autenticado) {
+      setErrorGeneral(
+        "Debes iniciar sesión para registrar tu pedido."
+      );
       return;
     }
 
-    localStorage.setItem('ultimaOrden', JSON.stringify(orden));
+    if (!validar()) return;
 
-    
-    onCompraExitosa(orden);
-    
+    if (carrito.length === 0) {
+      setErrorGeneral("Tu carrito está vacío.");
+      return;
+    }
 
-    onClearCart();
-    navigate('/compra-exitosa');
+    // Comprobar cantidades antes de enviar
+    const cantidadesValidas = carrito.every(
+      (producto) =>
+        Number.isInteger(producto.id) &&
+        Number.isInteger(producto.cantidad) &&
+        producto.cantidad > 0
+    );
+
+    if (!cantidadesValidas) {
+      setErrorGeneral(
+        "El carrito contiene productos o cantidades inválidas."
+      );
+      return;
+    }
+
+    setCargando(true);
+
+    try {
+      // Enviar solamente IDs y cantidades.
+      // El backend obtiene los precios desde MySQL.
+      const solicitud = {
+        detalles: carrito.map((producto) => ({
+          productoId: producto.id,
+          cantidad: producto.cantidad,
+        })),
+      };
+
+      const respuesta = await api.post(
+        "/boletas",
+        solicitud
+      );
+
+      // Boleta confirmada por Spring Boot
+      const boleta = respuesta.data;
+
+      // Adaptar la respuesta a la vista
+      // CompraExitosa que ya tiene el proyecto.
+      const orden = {
+        numero: `BOLETA-${boleta.id}`,
+        fecha: new Date(boleta.fecha).toLocaleString(
+          "es-CL"
+        ),
+        nombre: `${datos.nombre} ${datos.apellidos}`.trim(),
+        correo: datos.correo.trim(),
+        direccion:
+          datos.calle.trim() +
+          (datos.departamento.trim()
+            ? `, Depto ${datos.departamento.trim()}`
+            : ""),
+        region: datos.region,
+        comuna: datos.comuna,
+        indicaciones: datos.indicaciones,
+        tipoEntrega: datos.tipoEntrega,
+        estado: boleta.estado,
+        productos: boleta.detalles.map((detalle) => ({
+          id: detalle.productoId,
+          nombre: detalle.nombreProducto,
+          precio: detalle.precioUnitario,
+          cantidad: detalle.cantidad,
+          subtotal: detalle.subtotal,
+        })),
+        total: boleta.total,
+      };
+
+      // Conservar temporalmente la información
+      // para mostrar la confirmación de pedido.
+      try {
+        localStorage.setItem(
+          "ultimaOrden",
+          JSON.stringify(orden)
+        );
+      } catch (errorAlGuardar) {
+        console.warn(
+          "No se pudo guardar el resumen local:",
+          errorAlGuardar
+        );
+      }
+
+      // Solo vaciar después del éxito del backend
+      onClearCart();
+
+      // Ir a la confirmación
+      navigate("/compra-exitosa");
+
+    } catch (error) {
+      console.error("Error al registrar pedido:", error);
+
+      const estado = error.response?.status;
+
+      if (estado === 409) {
+        setErrorGeneral(
+          "Stock insuficiente. Revisa las cantidades del carrito."
+        );
+      } else if (estado === 401) {
+        setErrorGeneral(
+          "Tu sesión venció. Inicia sesión nuevamente."
+        );
+      } else if (estado === 403) {
+        setErrorGeneral(
+          "Tu usuario no tiene permiso para registrar pedidos."
+        );
+      } else if (estado === 404) {
+        setErrorGeneral(
+          "Uno de los productos ya no existe."
+        );
+      } else if (estado === 400) {
+        setErrorGeneral(
+          "La solicitud contiene datos incorrectos."
+        );
+      } else {
+        setErrorGeneral(
+          "No se pudo confirmar el pedido. Revisa Mis Compras antes de reintentar, por si el servidor alcanzó a registrarlo."
+        );
+      }
+    } finally {
+      setCargando(false);
+    }
   };
 
   if (carrito.length === 0) {
     return (
       <div className="container py-5">
         <div className="alert alert-info">
-          Tu carrito está vacío.{' '}
+          Tu carrito está vacío.{" "}
           <Link to="/productos">Ver productos</Link>
         </div>
       </div>
@@ -158,155 +295,264 @@ if (sinStock) {
           <div className="card border-0 shadow-sm">
             <div className="card-body p-4">
 
-              <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-                <div>
-                  <h1 className="fw-bold text-success h3 mb-1">Carrito de compra</h1>
-                  <p className="text-muted mb-0">Completa la siguiente información</p>
+              <h1 className="fw-bold text-success h3 mb-2">
+                Confirmar pedido
+              </h1>
+
+              <p className="text-muted">
+                Completa tus datos para registrar la compra.
+              </p>
+
+              {!autenticado && (
+                <div className="alert alert-warning">
+                  Debes{" "}
+                  <Link to="/login">iniciar sesión</Link>
+                  {" "}antes de confirmar tu pedido.
                 </div>
-                <span className="badge bg-primary fs-6">
-                  Total a pagar: ${total}
-                </span>
+              )}
+
+              {errorGeneral && (
+                <div className="alert alert-danger" role="alert">
+                  {errorGeneral}
+                </div>
+              )}
+
+              <div className="alert alert-info">
+                El pedido quedará en estado{" "}
+                <strong>PENDIENTE</strong>.
+                Este formulario no procesa pagos reales.
               </div>
 
-              {/* RESUMEN */}
-              <div className="table-responsive mb-4">
+              {/* RESUMEN DEL CARRITO */}
+              <h5 className="fw-bold mt-4">
+                Resumen de productos
+              </h5>
+
+              <div className="table-responsive mb-3">
                 <table className="table table-sm align-middle">
                   <thead>
                     <tr>
-                      <th>Nombre</th>
-                      <th>Precio</th>
+                      <th>Producto</th>
+                      <th>Precio estimado</th>
                       <th>Cantidad</th>
                       <th>Subtotal</th>
                     </tr>
                   </thead>
+
                   <tbody>
-                    {carrito.map((p) => (
-                      <tr key={p.id}>
-                        <td>{p.nombre}</td>
-                        <td>${p.precio}</td>
-                        <td>{p.cantidad}</td>
-                        <td>${p.precio * p.cantidad}</td>
+                    {carrito.map((producto) => (
+                      <tr key={producto.id}>
+                        <td>{producto.nombre}</td>
+                        <td>
+                          ${formatoPrecio(producto.precio)}
+                        </td>
+                        <td>{producto.cantidad}</td>
+                        <td>
+                          ${formatoPrecio(
+                            producto.precio * producto.cantidad
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {usuarioActual && (
-                <div className="alert alert-success">
-                  👤 Datos cargados automáticamente para{' '}
-                  <strong>{usuarioActual.nombre}</strong>
-                </div>
-              )}
+              <div className="text-end mb-4">
+                <strong>
+                  Total estimado: $
+                  {formatoPrecio(totalEstimado)}
+                </strong>
+                <p className="text-muted small">
+                  El total definitivo lo calcula Spring Boot.
+                </p>
+              </div>
 
-              {/* INFORMACIÓN DEL CLIENTE */}
-              <h5 className="fw-bold">Información del cliente</h5>
+              {/* INFORMACION DEL CLIENTE */}
+              <h5 className="fw-bold">
+                Información del cliente
+              </h5>
 
               <div className="row">
                 <div className="col-md-6">
-                  <Campo label="Nombre" name="nombre" value={datos.nombre}
-                    onChange={handleChange} error={errores.nombre} />
+                  <Campo
+                    label="Nombre"
+                    name="nombre"
+                    value={datos.nombre}
+                    onChange={handleChange}
+                    error={errores.nombre}
+                    disabled={cargando}
+                  />
                 </div>
+
                 <div className="col-md-6">
-                  <Campo label="Apellidos" name="apellidos" value={datos.apellidos}
-                    onChange={handleChange} error={errores.apellidos} />
+                  <Campo
+                    label="Apellidos"
+                    name="apellidos"
+                    value={datos.apellidos}
+                    onChange={handleChange}
+                    error={errores.apellidos}
+                    disabled={cargando}
+                  />
                 </div>
               </div>
 
-              <Campo label="Correo" name="correo" type="email" value={datos.correo}
-                onChange={handleChange} error={errores.correo} />
+              <Campo
+                label="Correo"
+                name="correo"
+                type="email"
+                value={datos.correo}
+                onChange={handleChange}
+                error={errores.correo}
+                disabled={cargando}
+              />
 
-              {/* DIRECCIÓN */}
-              <h5 className="fw-bold mt-2">Dirección de entrega de los productos</h5>
+              {/* DIRECCION */}
+              <h5 className="fw-bold mt-3">
+                Dirección de entrega
+              </h5>
 
               <div className="row">
                 <div className="col-md-8">
-                  <Campo label="Calle" name="calle" value={datos.calle}
-                    onChange={handleChange} error={errores.calle} />
+                  <Campo
+                    label="Calle"
+                    name="calle"
+                    value={datos.calle}
+                    onChange={handleChange}
+                    error={errores.calle}
+                    disabled={cargando}
+                  />
                 </div>
+
                 <div className="col-md-4">
-                  <Campo label="Departamento (opcional)" name="departamento"
-                    value={datos.departamento} onChange={handleChange}
-                    placeholder="Ej: 603" requerido={false} />
+                  <Campo
+                    label="Departamento"
+                    name="departamento"
+                    value={datos.departamento}
+                    onChange={handleChange}
+                    placeholder="Ej: 603"
+                    requerido={false}
+                    disabled={cargando}
+                  />
                 </div>
               </div>
 
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">
-                    Región<span className="text-danger">*</span>
+                    Región *
                   </label>
+
                   <select
                     name="region"
-                    className={`form-select ${errores.region ? 'is-invalid' : ''}`}
+                    className={`form-select ${
+                      errores.region ? "is-invalid" : ""
+                    }`}
                     value={datos.region}
                     onChange={handleChange}
+                    disabled={cargando}
                   >
-                    <option value="">Selecciona una región</option>
-                    {regiones.map((r) => (
-                      <option key={r.nombre} value={r.nombre}>{r.nombre}</option>
+                    <option value="">
+                      Selecciona una región
+                    </option>
+
+                    {regiones.map((region) => (
+                      <option
+                        key={region.nombre}
+                        value={region.nombre}
+                      >
+                        {region.nombre}
+                      </option>
                     ))}
                   </select>
+
                   {errores.region && (
-                    <div className="invalid-feedback">{errores.region}</div>
+                    <div className="invalid-feedback">
+                      {errores.region}
+                    </div>
                   )}
                 </div>
 
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-semibold">
-                    Comuna<span className="text-danger">*</span>
+                    Comuna *
                   </label>
+
                   <select
                     name="comuna"
-                    className={`form-select ${errores.comuna ? 'is-invalid' : ''}`}
+                    className={`form-select ${
+                      errores.comuna ? "is-invalid" : ""
+                    }`}
                     value={datos.comuna}
                     onChange={handleChange}
-                    disabled={!datos.region}
+                    disabled={!datos.region || cargando}
                   >
-                    <option value="">Selecciona una comuna</option>
-                    {comunasDisponibles.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    <option value="">
+                      Selecciona una comuna
+                    </option>
+
+                    {comunasDisponibles.map((comuna) => (
+                      <option key={comuna} value={comuna}>
+                        {comuna}
+                      </option>
                     ))}
                   </select>
+
                   {errores.comuna && (
-                    <div className="invalid-feedback">{errores.comuna}</div>
+                    <div className="invalid-feedback">
+                      {errores.comuna}
+                    </div>
                   )}
                 </div>
               </div>
 
               <div className="mb-3">
                 <label className="form-label fw-semibold">
-                  Indicaciones para la entrega (opcional)
+                  Indicaciones de entrega
                 </label>
+
                 <textarea
                   name="indicaciones"
                   className="form-control"
-                  rows="2"
-                  placeholder="Ej: Entre calles, color del edificio, no tiene timbre."
+                  rows={2}
                   value={datos.indicaciones}
                   onChange={handleChange}
+                  placeholder="Opcional"
+                  disabled={cargando}
                 />
               </div>
 
               <div className="mb-4">
-                <label className="form-label fw-semibold">Opción de entrega</label>
+                <label className="form-label fw-semibold">
+                  Opción de entrega
+                </label>
+
                 <select
                   name="tipoEntrega"
                   className="form-select"
                   value={datos.tipoEntrega}
                   onChange={handleChange}
+                  disabled={cargando}
                 >
-                  <option>Despacho estándar (3 a 5 días)</option>
-                  <option>Despacho express (24 horas)</option>
+                  <option>
+                    Despacho estándar (3 a 5 días)
+                  </option>
+                  <option>
+                    Despacho express (24 horas)
+                  </option>
                 </select>
               </div>
 
               <div className="text-end">
                 <button
+                  type="button"
                   className="btn btn-success rounded-pill px-4"
                   onClick={confirmarCompra}
+                  disabled={cargando || !autenticado}
                 >
-                  Pagar ahora ${total}
+                  {cargando
+                    ? "Registrando pedido..."
+                    : "Confirmar pedido"}
                 </button>
               </div>
 
