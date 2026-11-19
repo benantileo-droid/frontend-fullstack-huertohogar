@@ -1,145 +1,483 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
 
-export default function UsuariosAdmin({ usuarios, onDelete }) {
-  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+import { useEffect, useState } from "react";
+
+import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+
+export default function UsuariosAdmin() {
+
+  // ==========================================
+  // AUTENTICACION
+  // ==========================================
+
+  const { usuarioActual, token } = useAuth();
+
+  const esAdmin = usuarioActual?.rol === "admin";
+
+  // ==========================================
+  // ESTADOS
+  // ==========================================
+
+  const [usuarios, setUsuarios] = useState([]);
+
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  const [busqueda, setBusqueda] = useState("");
+  const [recarga, setRecarga] = useState(0);
+
+  // ==========================================
+  // CONSULTAR USUARIOS DESDE MYSQL
+  // ==========================================
+
+  useEffect(() => {
+
+    if (!esAdmin || !token) {
+      setUsuarios([]);
+      setCargando(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const cargarUsuarios = async () => {
+
+      setCargando(true);
+      setError("");
+
+      try {
+
+        // GET /api/v1/admin/usuarios
+
+        const respuesta = await api.get(
+          "/admin/usuarios",
+          {
+            signal: controller.signal,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (controller.signal.aborted) return;
+
+        if (!Array.isArray(respuesta.data)) {
+          throw new Error(
+            "La API devolvió un formato inesperado."
+          );
+        }
+
+        setUsuarios(respuesta.data);
+
+      } catch (err) {
+
+        if (controller.signal.aborted) return;
+
+        console.error(
+          "Error al cargar usuarios:",
+          err
+        );
+
+        const estado = err.response?.status;
+
+        if (estado === 401) {
+
+          setError(
+            "Tu sesión venció. Inicia sesión nuevamente."
+          );
+
+        } else if (estado === 403) {
+
+          setError(
+            "No tienes permisos para consultar usuarios."
+          );
+
+        } else {
+
+          setError(
+            "No se pudieron cargar los usuarios desde MySQL."
+          );
+
+        }
+
+      } finally {
+
+        if (!controller.signal.aborted) {
+          setCargando(false);
+        }
+
+      }
+
+    };
+
+    cargarUsuarios();
+
+    return () => controller.abort();
+
+  }, [esAdmin, token, recarga]);
+
+  // ==========================================
+  // BUSCAR USUARIOS
+  // ==========================================
+
+  const texto = busqueda.trim().toLowerCase();
+
+  const usuariosFiltrados = usuarios.filter(
+    (usuario) => {
+
+      const nombre = String(
+        usuario.nombre ?? ""
+      ).toLowerCase();
+
+      const correo = String(
+        usuario.correo ?? ""
+      ).toLowerCase();
+
+      const rol = String(
+        usuario.rol ?? ""
+      ).toLowerCase();
+
+      const id = String(usuario.id ?? "");
+
+      return (
+        nombre.includes(texto) ||
+        correo.includes(texto) ||
+        rol.includes(texto) ||
+        id.includes(texto)
+      );
+    }
+  );
+
+  // ==========================================
+  // CONTADORES
+  // ==========================================
+
+  const totalUsuarios = usuarios.length;
+
+  const totalClientes = usuarios.filter(
+    (usuario) =>
+      String(usuario.rol).toUpperCase() === "CLIENTE"
+  ).length;
+
+  const totalVendedores = usuarios.filter(
+    (usuario) =>
+      String(usuario.rol).toUpperCase() === "VENDEDOR"
+  ).length;
+
+  const totalAdministradores = usuarios.filter(
+    (usuario) =>
+      String(usuario.rol).toUpperCase() === "ADMIN"
+  ).length;
+
+  // ==========================================
+  // COLOR SEGUN EL ROL
+  // ==========================================
+
+  const claseRol = (rol) => {
+
+    switch (String(rol).toUpperCase()) {
+
+      case "ADMIN":
+        return "badge bg-danger";
+
+      case "VENDEDOR":
+        return "badge bg-warning text-dark";
+
+      case "CLIENTE":
+        return "badge bg-success";
+
+      default:
+        return "badge bg-secondary";
+    }
+
+  };
+
+  // ==========================================
+  // CONTROL DE ACCESO
+  // ==========================================
+
+  if (!esAdmin) {
+
+    return (
+      <div className="container py-5">
+
+        <div className="alert alert-danger">
+          Acceso exclusivo para administradores.
+        </div>
+
+      </div>
+    );
+
+  }
+
+  // ==========================================
+  // INTERFAZ
+  // ==========================================
 
   return (
-    <div className="container py-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="fw-bold text-success mb-0">Administración de Usuarios</h1>
-        <Link to="/admin/usuarios/nuevo" className="btn btn-success">
-          ➕ Nuevo usuario
-        </Link>
-      </div>
 
-      <div className="card border-0 shadow-sm">
-        <div className="card-body">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Correo</th>
-                  <th>Rol</th>
-                  <th>Comuna</th>
-                  <th>Compras</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
+    <div className="container py-4">
 
-              <tbody>
-                {usuarios.map((usuario) => (
-                  <tr key={usuario.id}>
-                    <td>{usuario.nombre}</td>
+      {/* ENCABEZADO */}
 
-                    <td>{usuario.email}</td>
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
 
-                    <td>
-                      <span
-                        className={
-                          usuario.rol === 'admin'
-                            ? 'badge bg-danger'
-                            : 'badge bg-success'
-                        }
-                      >
-                        {usuario.rol}
-                      </span>
-                    </td>
+        <div>
 
-                    <td>{usuario.comuna || 'Sin comuna'}</td>
+          <h1 className="fw-bold text-success mb-2">
+            👥 Administración de usuarios
+          </h1>
 
-                    <td>{usuario.compras?.length || 0}</td>
+          <p className="text-muted mb-0">
+            Usuarios registrados en Spring Boot y MySQL.
+          </p>
 
-                                        <td className="text-nowrap">
-                      <button
-                        className="btn btn-outline-success btn-sm me-2"
-                        onClick={() => setUsuarioSeleccionado(usuario)}
-                      >
-                        Ver historial
-                      </button>
-                      <Link
-                        to={"/admin/usuarios/" + usuario.id + "/editar"}
-                        className="btn btn-warning btn-sm me-2"
-                      >
-                        ✏️ Editar
-                      </Link>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => {
-                          if (window.confirm("¿Eliminar a " + usuario.nombre + "?")) {
-                            onDelete(usuario.id);
-                          }
-                        }}
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
+
+        <button
+          type="button"
+          className="btn btn-outline-success"
+          disabled={cargando}
+          onClick={() =>
+            setRecarga((anterior) => anterior + 1)
+          }
+        >
+          🔄 Actualizar
+        </button>
+
       </div>
 
-      {usuarioSeleccionado && (
-        <div className="card border-0 shadow-sm mt-4">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h3 className="fw-bold mb-0">
-                Historial de {usuarioSeleccionado.nombre}
-              </h3>
+      {/* CARGANDO */}
 
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => setUsuarioSeleccionado(null)}
-              >
-                Cerrar
-              </button>
+      {cargando && (
+
+        <div className="alert alert-info">
+          Cargando usuarios desde MySQL...
+        </div>
+
+      )}
+
+      {/* ERROR */}
+
+      {error && (
+
+        <div className="alert alert-danger">
+          {error}
+        </div>
+
+      )}
+
+      {!cargando && !error && (
+
+        <>
+
+          {/* TARJETAS DE RESUMEN */}
+
+          <div className="row g-3 mb-4">
+
+            <div className="col-md-3">
+
+              <div className="card border-0 shadow-sm h-100">
+
+                <div className="card-body text-center">
+
+                  <p className="text-muted mb-1">
+                    Total usuarios
+                  </p>
+
+                  <h2 className="fw-bold text-success">
+                    {totalUsuarios}
+                  </h2>
+
+                </div>
+
+              </div>
+
             </div>
 
-            {usuarioSeleccionado.compras?.length > 0 ? (
-              usuarioSeleccionado.compras.map((compra) => (
-                <div
-                  key={compra.numero}
-                  className="border rounded p-3 mb-3"
-                >
-                  <p className="mb-1">
-                    <strong>Orden:</strong> {compra.numero}
+            <div className="col-md-3">
+
+              <div className="card border-0 shadow-sm h-100">
+
+                <div className="card-body text-center">
+
+                  <p className="text-muted mb-1">
+                    Clientes
                   </p>
 
-                  <p className="mb-1">
-                    <strong>Fecha:</strong> {compra.fecha}
-                  </p>
+                  <h2 className="fw-bold">
+                    {totalClientes}
+                  </h2>
 
-                  <p className="mb-1">
-                    <strong>Entrega:</strong> {compra.tipoEntrega}
-                  </p>
-
-                  <p className="mb-2">
-                    <strong>Total:</strong> ${compra.total}
-                  </p>
-
-                  <strong>Productos:</strong>
-
-                  <ul className="mb-0">
-                    {compra.productos?.map((producto) => (
-                      <li key={producto.id}>
-                        {producto.nombre} x{producto.cantidad}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-              ))
-            ) : (
-              <div className="alert alert-secondary mb-0">
-                Este usuario todavía no tiene compras.
+
               </div>
-            )}
+
+            </div>
+
+            <div className="col-md-3">
+
+              <div className="card border-0 shadow-sm h-100">
+
+                <div className="card-body text-center">
+
+                  <p className="text-muted mb-1">
+                    Vendedores
+                  </p>
+
+                  <h2 className="fw-bold text-warning">
+                    {totalVendedores}
+                  </h2>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div className="col-md-3">
+
+              <div className="card border-0 shadow-sm h-100">
+
+                <div className="card-body text-center">
+
+                  <p className="text-muted mb-1">
+                    Administradores
+                  </p>
+
+                  <h2 className="fw-bold text-danger">
+                    {totalAdministradores}
+                  </h2>
+
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
-        </div>
+
+          {/* TABLA DE USUARIOS */}
+
+          <div className="card border-0 shadow-sm">
+
+            <div className="card-body p-4">
+
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+
+                <h4 className="fw-bold text-success mb-0">
+                  📋 Usuarios registrados
+                </h4>
+
+                <span className="badge bg-success">
+                  {usuariosFiltrados.length} resultados
+                </span>
+
+              </div>
+
+              {/* BUSCADOR */}
+
+              <input
+                type="text"
+                className="form-control mb-4"
+                placeholder="🔍 Buscar por nombre, correo, ID o rol..."
+                value={busqueda}
+                onChange={(e) =>
+                  setBusqueda(e.target.value)
+                }
+              />
+
+              {usuariosFiltrados.length === 0 ? (
+
+                <div className="alert alert-secondary">
+                  No hay usuarios para mostrar.
+                </div>
+
+              ) : (
+
+                <div className="table-responsive">
+
+                  <table className="table table-hover align-middle">
+
+                    <thead>
+
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Correo electrónico</th>
+                        <th>Rol</th>
+                      </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                      {usuariosFiltrados.map(
+                        (usuario) => (
+
+                          <tr key={usuario.id}>
+
+                            <td className="fw-semibold">
+                              #{usuario.id}
+                            </td>
+
+                            <td>
+                              {usuario.nombre}
+                            </td>
+
+                            <td>
+                              {usuario.correo}
+                            </td>
+
+                            <td>
+
+                              <span
+                                className={claseRol(usuario.rol)}
+                              >
+                                {usuario.rol}
+                              </span>
+
+                            </td>
+
+                          </tr>
+
+                        )
+                      )}
+
+                    </tbody>
+
+                  </table>
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+          {/* INFORMACION */}
+
+          <div className="alert alert-info mt-4">
+
+            <strong>Seguridad:</strong> este panel consulta
+            los usuarios reales de MySQL mediante JWT.
+
+            <div className="mt-2">
+
+              Las contraseñas no se muestran.
+              Por ahora, la administración de usuarios
+              es solamente de consulta.
+
+            </div>
+
+          </div>
+
+        </>
+
       )}
+
     </div>
+
   );
 }
