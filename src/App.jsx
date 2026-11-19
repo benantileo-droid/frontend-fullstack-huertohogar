@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+
 import {
   Routes,
   Route,
@@ -16,28 +17,23 @@ import useProductosApi from "./hooks/useProductosApi";
 import { useAuth } from "./context/AuthContext";
 import { useCarrito } from "./context/CarritoContext";
 
+import api from "./services/api";
+
 // ==========================================
 // BASE DE DATOS LOCAL
-// PENDIENTE MIGRAR AL BACKEND
+// SOLO USUARIOS, CATEGORIAS Y ORDENES ANTIGUAS
 // ==========================================
 
 import {
-  crearProducto,
-  actualizarProducto,
-  eliminarProducto,
   getUsuarios,
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
-  agregarCompra,
   getCategorias,
   crearCategoria,
   actualizarCategoria,
   eliminarCategoria,
   getOrdenes,
-  crearOrden,
-  descontarStock,
-  renombrarCategoriaProductos,
 } from "./data/db";
 
 // ==========================================
@@ -62,11 +58,10 @@ import BlogDetail from "./pages/BlogDetail";
 import MisCompras from "./pages/MisCompras";
 
 // ==========================================
-// PAGINAS ADMINISTRATIVAS
+// PANEL ADMINISTRATIVO
 // ==========================================
 
 import RutaAdmin from "./components/RutaAdmin";
-import ProductForm from "./pages/admin/ProductForm";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -81,7 +76,7 @@ import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
 export default function App() {
 
   // ==========================================
-  // PRODUCTOS DESDE SPRING BOOT / MYSQL
+  // PRODUCTOS REALES DESDE MYSQL
   // ==========================================
 
   const {
@@ -92,16 +87,17 @@ export default function App() {
   } = useProductosApi();
 
   // ==========================================
-  // AUTENTICACION CON JWT
+  // AUTENTICACION JWT
   // ==========================================
 
   const {
     usuarioActual,
+    token,
     cerrarSesion,
   } = useAuth();
 
   // ==========================================
-  // CARRITO GLOBAL CON REACT CONTEXT
+  // CARRITO GLOBAL
   // ==========================================
 
   const {
@@ -114,7 +110,7 @@ export default function App() {
   } = useCarrito();
 
   // ==========================================
-  // ESTADOS DE ADMINISTRACION LOCAL
+  // ESTADOS QUE TODAVIA SON LOCALES
   // ==========================================
 
   const [categorias, setCategorias] =
@@ -123,8 +119,12 @@ export default function App() {
   const [usuarios, setUsuarios] =
     useState(getUsuarios);
 
-  const [ordenes, setOrdenes] =
+  const [ordenes] =
     useState(getOrdenes);
+
+  // ==========================================
+  // ESTADOS DE LA TIENDA
+  // ==========================================
 
   const [busqueda, setBusqueda] =
     useState("");
@@ -134,14 +134,10 @@ export default function App() {
     setCategoriaSeleccionada,
   ] = useState("Todas");
 
-  const [mostrarFormulario, setMostrarFormulario] =
-    useState(false);
-
-  const [productoEditando, setProductoEditando] =
-    useState(null);
-
   const [modoAdmin, setModoAdmin] =
     useState(false);
+
+  const eliminandoProductoRef = useRef(false);
 
   // ==========================================
   // NAVEGACION
@@ -153,38 +149,8 @@ export default function App() {
   const esRutaAdmin =
     location.pathname.startsWith("/admin");
 
-  // ==========================================
-  // ADMINISTRACION DE USUARIOS
-  // TODAVIA LOCAL
-  // ==========================================
-
-  const handleCrearUsuario = (datos) => {
-    setUsuarios(crearUsuario(datos));
-  };
-
-  const handleActualizarUsuario = (id, cambios) => {
-
-    const datos = usuarioActual?.id === id
-      ? {
-          ...cambios,
-          rol: usuarioActual.rol,
-        }
-      : cambios;
-
-    setUsuarios(
-      actualizarUsuario(id, datos)
-    );
-  };
-
-  const handleEliminarUsuario = (id) => {
-
-    if (usuarioActual?.id === id) {
-      alert("No puedes eliminar tu propio usuario");
-      return;
-    }
-
-    setUsuarios(eliminarUsuario(id));
-  };
+  const esAdmin =
+    usuarioActual?.rol === "admin";
 
   // ==========================================
   // CERRAR SESION
@@ -197,100 +163,214 @@ export default function App() {
     vaciarCarrito();
 
     setModoAdmin(false);
-    setMostrarFormulario(false);
-    setProductoEditando(null);
 
     navigate("/");
   };
 
   // ==========================================
-  // COMPRA ANTIGUA LOCAL
-  // PENDIENTE DE ELIMINAR
+  // PRODUCTOS - CREAR
   // ==========================================
 
-  const handleCompraExitosa = (orden) => {
+  // El formulario de creación está conectado
+  // a Spring Boot en AdminProductoForm.jsx.
 
-    setOrdenes(
-      crearOrden(orden)
-    );
+  const handleNewProduct = () => {
 
-    setProductos(
-      descontarStock(orden.productos)
-    );
+    if (!esAdmin) return;
 
-    if (!usuarioActual) return;
+    navigate("/admin/productos/nuevo");
+  };
 
-    setUsuarios(
-      agregarCompra(usuarioActual.id, orden)
+  // ==========================================
+  // PRODUCTOS - EDITAR
+  // ==========================================
+
+  // Ya no usamos el formulario local.
+  // Redirigimos al formulario conectado a MySQL.
+
+  const handleEditProduct = (producto) => {
+
+    if (!esAdmin) return;
+
+    const id =
+      typeof producto === "object"
+        ? producto?.id
+        : producto;
+
+    if (id == null) return;
+
+    navigate(
+      `/admin/productos/${id}/editar`
     );
   };
 
   // ==========================================
-  // FUNCIONES DEL CARRITO
+  // PRODUCTOS - ELIMINAR
   // ==========================================
 
-  const handleAddToCart = agregarAlCarrito;
+  // Esta función se utiliza desde el
+  // catálogo cuando el modo Admin está activo.
+  //
+  // La eliminación ocurre realmente en MySQL.
 
-  const handleClearCart = vaciarCarrito;
+  const handleDeleteProduct = async (productoOId) => {
 
-  const handleRemoveFromCart = eliminarDelCarrito;
+    if (!esAdmin || !token) {
 
-  const handleIncreaseQuantity = aumentarCantidad;
+      window.alert(
+        "Debes iniciar sesión como administrador."
+      );
 
-  const handleDecreaseQuantity = disminuirCantidad;
+      return;
+    }
 
-  // ==========================================
-  // ADMINISTRACION DE PRODUCTOS
-  // TODAVIA LOCAL
-  // ==========================================
+    if (eliminandoProductoRef.current) return;
 
-  const handleSaveProduct = (datos) => {
+    const id =
+      typeof productoOId === "object"
+        ? productoOId?.id
+        : productoOId;
 
-    if (productoEditando) {
+    if (id == null) return;
 
-      setProductos(
-        actualizarProducto(
-          productoEditando.id,
-          datos
+    const producto = productos.find(
+      (item) =>
+        String(item.id) === String(id)
+    );
+
+    const nombre =
+      producto?.nombre ?? `#${id}`;
+
+    const confirmar = window.confirm(
+      `¿Seguro que deseas eliminar "${nombre}"?\n\n` +
+      "El producto será eliminado de MySQL."
+    );
+
+    if (!confirmar) return;
+
+    eliminandoProductoRef.current = true;
+
+    try {
+
+      await api.delete(
+        `/productos/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Solo actualizamos React cuando
+      // Spring Boot confirma la eliminación.
+
+      setProductos((actuales) =>
+        actuales.filter(
+          (item) =>
+            String(item.id) !== String(id)
         )
       );
 
-      setProductoEditando(null);
-
-    } else {
-
-      setProductos(
-        crearProducto(datos)
+      window.alert(
+        "Producto eliminado correctamente de MySQL."
       );
+
+    } catch (err) {
+
+      console.error(
+        "Error al eliminar producto:",
+        err
+      );
+
+      const estado = err.response?.status;
+
+      if (estado === 401) {
+
+        window.alert(
+          "Tu sesión venció. Inicia sesión nuevamente."
+        );
+
+      } else if (estado === 403) {
+
+        window.alert(
+          "No tienes permisos para eliminar productos."
+        );
+
+      } else if (estado === 404) {
+
+        window.alert(
+          "El producto no existe en MySQL."
+        );
+
+      } else if (estado === 409) {
+
+        window.alert(
+          "No se puede eliminar el producto porque existe un conflicto con sus datos."
+        );
+
+      } else {
+
+        window.alert(
+          "No se pudo eliminar el producto.\n\n" +
+          "Comprueba la conexión con Spring Boot. " +
+          "Si tiene compras asociadas, MySQL podría impedir la eliminación."
+        );
+
+      }
+
+    } finally {
+
+      eliminandoProductoRef.current = false;
+
+    }
+  };
+
+  // ==========================================
+  // USUARIOS
+  // TODAVIA LOCALES
+  // ==========================================
+
+  const handleCrearUsuario = (datos) => {
+
+    setUsuarios(
+      crearUsuario(datos)
+    );
+  };
+
+  const handleActualizarUsuario = (id, cambios) => {
+
+    const datos =
+      usuarioActual?.id === id
+        ? {
+            ...cambios,
+            rol: usuarioActual.rol,
+          }
+        : cambios;
+
+    setUsuarios(
+      actualizarUsuario(id, datos)
+    );
+  };
+
+  const handleEliminarUsuario = (id) => {
+
+    if (usuarioActual?.id === id) {
+
+      window.alert(
+        "No puedes eliminar tu propio usuario."
+      );
+
+      return;
     }
 
-    setMostrarFormulario(false);
-  };
-
-  const handleDeleteProduct = (id) => {
-
-    setProductos(
-      eliminarProducto(id)
-    );
-  };
-
-  const handleCrearProducto = (datos) => {
-
-    setProductos(
-      crearProducto(datos)
-    );
-  };
-
-  const handleActualizarProducto = (id, datos) => {
-
-    setProductos(
-      actualizarProducto(id, datos)
+    setUsuarios(
+      eliminarUsuario(id)
     );
   };
 
   // ==========================================
-  // ADMINISTRACION DE CATEGORIAS
-  // TODAVIA LOCAL
+  // CATEGORIAS
+  // TODAVIA LOCALES
   // ==========================================
 
   const handleCrearCategoria = (datos) => {
@@ -302,27 +382,13 @@ export default function App() {
 
   const handleActualizarCategoria = (id, cambios) => {
 
-    const anterior = categorias.find(
-      (categoria) => categoria.id === id
-    );
-
     setCategorias(
       actualizarCategoria(id, cambios)
     );
 
-    if (
-      anterior &&
-      cambios.nombre &&
-      cambios.nombre !== anterior.nombre
-    ) {
-
-      setProductos(
-        renombrarCategoriaProductos(
-          anterior.nombre,
-          cambios.nombre
-        )
-      );
-    }
+    // No modificamos productos en localStorage.
+    // La actualización real de categorías
+    // se conectará al backend posteriormente.
   };
 
   const handleEliminarCategoria = (id) => {
@@ -333,49 +399,19 @@ export default function App() {
   };
 
   // ==========================================
-  // FORMULARIO DE PRODUCTOS
-  // ==========================================
-
-  const handleEditProduct = (producto) => {
-
-    setProductoEditando(producto);
-    setMostrarFormulario(true);
-
-    setTimeout(() => {
-      document
-        .getElementById("formulario-admin")
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
-    }, 100);
-  };
-
-  const handleNewProduct = () => {
-
-    setProductoEditando(null);
-    setMostrarFormulario(true);
-
-    setTimeout(() => {
-      document
-        .getElementById("formulario-admin")
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
-    }, 100);
-  };
-
-  // ==========================================
-  // BUSQUEDA Y FILTROS
+  // FILTROS DE PRODUCTOS
   // ==========================================
 
   const productosFiltrados = productos.filter(
     (producto) => {
 
-      const coincideNombre = producto.nombre
-        .toLowerCase()
-        .includes(
-          busqueda.toLowerCase()
-        );
+      const nombre = String(
+        producto.nombre ?? ""
+      ).toLowerCase();
+
+      const coincideNombre = nombre.includes(
+        busqueda.toLowerCase()
+      );
 
       const coincideCategoria =
         categoriaSeleccionada === "Todas" ||
@@ -390,6 +426,7 @@ export default function App() {
   // ==========================================
 
   return (
+
     <div className="bg-light min-vh-100 d-flex flex-column">
 
       {/* ==================================== */}
@@ -428,52 +465,31 @@ export default function App() {
 
               <div className="navbar-nav me-auto align-items-lg-center">
 
-                <Link
-                  className="nav-link"
-                  to="/"
-                >
+                <Link className="nav-link" to="/">
                   Inicio
                 </Link>
 
-                <Link
-                  className="nav-link"
-                  to="/productos"
-                >
+                <Link className="nav-link" to="/productos">
                   Productos
                 </Link>
 
-                <Link
-                  className="nav-link"
-                  to="/categorias"
-                >
+                <Link className="nav-link" to="/categorias">
                   Categorías
                 </Link>
 
-                <Link
-                  className="nav-link"
-                  to="/ofertas"
-                >
+                <Link className="nav-link" to="/ofertas">
                   Ofertas
                 </Link>
 
-                <Link
-                  className="nav-link"
-                  to="/blog"
-                >
+                <Link className="nav-link" to="/blog">
                   Blog
                 </Link>
 
-                <Link
-                  className="nav-link"
-                  to="/nosotros"
-                >
+                <Link className="nav-link" to="/nosotros">
                   Nosotros
                 </Link>
 
-                <Link
-                  className="nav-link"
-                  to="/contacto"
-                >
+                <Link className="nav-link" to="/contacto">
                   Contacto
                 </Link>
 
@@ -503,8 +519,6 @@ export default function App() {
 
                   <>
 
-                    {/* USUARIO AUTENTICADO */}
-
                     <span className="nav-link text-white-50">
                       👤 {usuarioActual.nombre}
                     </span>
@@ -517,8 +531,6 @@ export default function App() {
                       Cerrar sesión
                     </button>
 
-                    {/* HISTORIAL DE COMPRAS */}
-
                     <Link
                       className="nav-link"
                       to="/mis-compras"
@@ -530,9 +542,7 @@ export default function App() {
 
                 )}
 
-                {/* ================================= */}
-                {/* NUEVO: PANEL VENDEDOR */}
-                {/* ================================= */}
+                {/* PANEL VENDEDOR */}
 
                 {usuarioActual?.rol === "vendedor" && (
 
@@ -556,9 +566,7 @@ export default function App() {
 
               </div>
 
-              {/* ================================= */}
               {/* BUSCADOR Y ADMINISTRACION */}
-              {/* ================================= */}
 
               <div className="d-flex flex-column flex-xl-row gap-2 my-2 my-lg-0">
 
@@ -574,7 +582,7 @@ export default function App() {
 
                 {/* SOLO ADMIN */}
 
-                {usuarioActual?.rol === "admin" && (
+                {esAdmin && (
 
                   <>
 
@@ -588,15 +596,9 @@ export default function App() {
                     <button
                       type="button"
                       className="btn btn-outline-light rounded-pill text-nowrap"
-                      onClick={() => {
-
-                        setModoAdmin(!modoAdmin);
-
-                        setMostrarFormulario(false);
-
-                        setProductoEditando(null);
-
-                      }}
+                      onClick={() =>
+                        setModoAdmin((anterior) => !anterior)
+                      }
                     >
                       {modoAdmin
                         ? "Salir Admin"
@@ -617,6 +619,7 @@ export default function App() {
               </div>
 
             </div>
+
           </div>
 
         </nav>
@@ -629,18 +632,14 @@ export default function App() {
 
       <Routes>
 
-        {/* ================================= */}
         {/* INICIO */}
-        {/* ================================= */}
 
         <Route
           path="/"
           element={<Home />}
         />
 
-        {/* ================================= */}
         {/* PRODUCTOS */}
-        {/* ================================= */}
 
         <Route
           path="/productos"
@@ -657,19 +656,17 @@ export default function App() {
               }
               categoriaSeleccionada={categoriaSeleccionada}
               setCategoriaSeleccionada={setCategoriaSeleccionada}
-              onAddToCart={handleAddToCart}
+              onAddToCart={agregarAlCarrito}
               onDelete={handleDeleteProduct}
               onEdit={handleEditProduct}
-              modoAdmin={modoAdmin}
+              modoAdmin={modoAdmin && esAdmin}
               onNewProduct={handleNewProduct}
             />
 
           }
         />
 
-        {/* ================================= */}
         {/* CATEGORIAS */}
-        {/* ================================= */}
 
         <Route
           path="/categorias"
@@ -678,7 +675,7 @@ export default function App() {
             <Categoria
               categorias={categorias}
               productos={productos}
-              onAddToCart={handleAddToCart}
+              onAddToCart={agregarAlCarrito}
             />
 
           }
@@ -691,15 +688,13 @@ export default function App() {
             <Categoria
               categorias={categorias}
               productos={productos}
-              onAddToCart={handleAddToCart}
+              onAddToCart={agregarAlCarrito}
             />
 
           }
         />
 
-        {/* ================================= */}
         {/* OFERTAS */}
-        {/* ================================= */}
 
         <Route
           path="/ofertas"
@@ -707,15 +702,13 @@ export default function App() {
 
             <Ofertas
               productos={productos}
-              onAddToCart={handleAddToCart}
+              onAddToCart={agregarAlCarrito}
             />
 
           }
         />
 
-        {/* ================================= */}
         {/* CARRITO */}
-        {/* ================================= */}
 
         <Route
           path="/carrito"
@@ -723,17 +716,15 @@ export default function App() {
 
             <Carrito
               carrito={carrito}
-              onRemove={handleRemoveFromCart}
-              onIncrease={handleIncreaseQuantity}
-              onDecrease={handleDecreaseQuantity}
+              onRemove={eliminarDelCarrito}
+              onIncrease={aumentarCantidad}
+              onDecrease={disminuirCantidad}
             />
 
           }
         />
 
-        {/* ================================= */}
-        {/* CHECKOUT */}
-        {/* ================================= */}
+        {/* CHECKOUT REAL */}
 
         <Route
           path="/checkout"
@@ -742,17 +733,14 @@ export default function App() {
             <Checkout
               carrito={carrito}
               productos={productos}
-              onClearCart={handleClearCart}
+              onClearCart={vaciarCarrito}
               usuarioActual={usuarioActual}
-              onCompraExitosa={handleCompraExitosa}
             />
 
           }
         />
 
-        {/* ================================= */}
         {/* RESULTADOS DE COMPRA */}
-        {/* ================================= */}
 
         <Route
           path="/compra-exitosa"
@@ -764,9 +752,7 @@ export default function App() {
           element={<CompraFallida />}
         />
 
-        {/* ================================= */}
         {/* DETALLE DE PRODUCTO */}
-        {/* ================================= */}
 
         <Route
           path="/productos/:id"
@@ -774,15 +760,13 @@ export default function App() {
 
             <ProductDetail
               productos={productos}
-              onAddToCart={handleAddToCart}
+              onAddToCart={agregarAlCarrito}
             />
 
           }
         />
 
-        {/* ================================= */}
-        {/* REGISTRO Y LOGIN */}
-        {/* ================================= */}
+        {/* AUTENTICACION */}
 
         <Route
           path="/registro"
@@ -794,18 +778,14 @@ export default function App() {
           element={<Login />}
         />
 
-        {/* ================================= */}
-        {/* MIS COMPRAS - CLIENTES */}
-        {/* ================================= */}
+        {/* HISTORIAL DE COMPRAS */}
 
         <Route
           path="/mis-compras"
           element={<MisCompras />}
         />
 
-        {/* ================================= */}
-        {/* INFORMACION DE LA TIENDA */}
-        {/* ================================= */}
+        {/* INFORMACION */}
 
         <Route
           path="/nosotros"
@@ -817,9 +797,7 @@ export default function App() {
           element={<Contacto />}
         />
 
-        {/* ================================= */}
         {/* BLOG */}
-        {/* ================================= */}
 
         <Route
           path="/blog"
@@ -831,9 +809,9 @@ export default function App() {
           element={<BlogDetail />}
         />
 
-        {/* ========================================== */}
-        {/* NUEVO: PANEL EXCLUSIVO DEL VENDEDOR */}
-        {/* ========================================== */}
+        {/* ================================= */}
+        {/* PANEL VENDEDOR */}
+        {/* ================================= */}
 
         <Route
           path="/vendedor/ordenes"
@@ -858,9 +836,9 @@ export default function App() {
           }
         />
 
-        {/* ========================================== */}
+        {/* ================================= */}
         {/* PANEL ADMINISTRADOR */}
-        {/* ========================================== */}
+        {/* ================================= */}
 
         <Route
           path="/admin"
@@ -878,29 +856,21 @@ export default function App() {
           }
         >
 
-          {/* DASHBOARD */}
+          {/* DASHBOARD REAL */}
 
           <Route
             index
-            element={
-
-              <Dashboard
-                productos={productos}
-                usuarios={usuarios}
-                ordenes={ordenes}
-              />
-
-            }
+            element={<Dashboard />}
           />
 
-          {/* ORDENES ADMIN */}
+          {/* ORDENES REALES */}
 
           <Route
             path="ordenes"
-            element={
-              <Ordenes ordenes={ordenes} />
-            }
+            element={<Ordenes />}
           />
+
+          {/* DETALLE ANTIGUO DE BOLETA */}
 
           <Route
             path="ordenes/:numero"
@@ -909,7 +879,7 @@ export default function App() {
             }
           />
 
-          {/* USUARIOS */}
+          {/* USUARIOS - TODAVIA LOCALES */}
 
           <Route
             path="usuarios"
@@ -947,17 +917,12 @@ export default function App() {
             }
           />
 
-          {/* PRODUCTOS ADMIN */}
+          {/* PRODUCTOS - MYSQL */}
 
           <Route
             path="productos"
             element={
-
-              <AdminProductos
-                productos={productos}
-                onDelete={handleDeleteProduct}
-              />
-
+              <AdminProductos productos={productos} />
             }
           />
 
@@ -966,10 +931,7 @@ export default function App() {
             element={
 
               <AdminProductoForm
-                productos={productos}
                 categorias={categorias}
-                onCreate={handleCrearProducto}
-                onUpdate={handleActualizarProducto}
               />
 
             }
@@ -980,16 +942,13 @@ export default function App() {
             element={
 
               <AdminProductoForm
-                productos={productos}
                 categorias={categorias}
-                onCreate={handleCrearProducto}
-                onUpdate={handleActualizarProducto}
               />
 
             }
           />
 
-          {/* PRODUCTOS CRITICOS */}
+          {/* INVENTARIO */}
 
           <Route
             path="productos-criticos"
@@ -1002,7 +961,7 @@ export default function App() {
             }
           />
 
-          {/* CATEGORIAS ADMIN */}
+          {/* CATEGORIAS - TODAVIA LOCALES */}
 
           <Route
             path="categorias"
@@ -1022,35 +981,6 @@ export default function App() {
         </Route>
 
       </Routes>
-
-      {/* ==================================== */}
-      {/* FORMULARIO ADMINISTRATIVO */}
-      {/* ==================================== */}
-
-      {mostrarFormulario && (
-
-        <div
-          id="formulario-admin"
-          className="container my-4 flex-grow-1"
-        >
-
-          <div className="row justify-content-center">
-
-            <div className="col-md-8">
-
-              <ProductForm
-                onSave={handleSaveProduct}
-                productoEditando={productoEditando}
-                categorias={categorias}
-              />
-
-            </div>
-
-          </div>
-
-        </div>
-
-      )}
 
       {/* ==================================== */}
       {/* FOOTER */}
