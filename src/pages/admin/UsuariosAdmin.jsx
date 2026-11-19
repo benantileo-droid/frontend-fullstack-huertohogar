@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
+const ROLES = ["CLIENTE", "VENDEDOR", "ADMIN"];
+
 export default function UsuariosAdmin() {
 
   // ==========================================
@@ -20,14 +22,21 @@ export default function UsuariosAdmin() {
 
   const [usuarios, setUsuarios] = useState([]);
 
+  const [rolesSeleccionados, setRolesSeleccionados] =
+    useState({});
+
   const [cargando, setCargando] = useState(true);
+
+  const [guardandoId, setGuardandoId] = useState(null);
+
   const [error, setError] = useState("");
+  const [exito, setExito] = useState("");
 
   const [busqueda, setBusqueda] = useState("");
   const [recarga, setRecarga] = useState(0);
 
   // ==========================================
-  // CONSULTAR USUARIOS DESDE MYSQL
+  // OBTENER USUARIOS REALES
   // ==========================================
 
   useEffect(() => {
@@ -47,8 +56,6 @@ export default function UsuariosAdmin() {
 
       try {
 
-        // GET /api/v1/admin/usuarios
-
         const respuesta = await api.get(
           "/admin/usuarios",
           {
@@ -63,11 +70,24 @@ export default function UsuariosAdmin() {
 
         if (!Array.isArray(respuesta.data)) {
           throw new Error(
-            "La API devolvió un formato inesperado."
+            "La API devolvió un formato incorrecto."
           );
         }
 
         setUsuarios(respuesta.data);
+
+        // Guardar el rol actual de cada usuario
+        // en el selector correspondiente.
+
+        const roles = {};
+
+        respuesta.data.forEach((usuario) => {
+          roles[usuario.id] = String(
+            usuario.rol
+          ).toUpperCase();
+        });
+
+        setRolesSeleccionados(roles);
 
       } catch (err) {
 
@@ -81,23 +101,17 @@ export default function UsuariosAdmin() {
         const estado = err.response?.status;
 
         if (estado === 401) {
-
           setError(
             "Tu sesión venció. Inicia sesión nuevamente."
           );
-
         } else if (estado === 403) {
-
           setError(
             "No tienes permisos para consultar usuarios."
           );
-
         } else {
-
           setError(
             "No se pudieron cargar los usuarios desde MySQL."
           );
-
         }
 
       } finally {
@@ -117,7 +131,174 @@ export default function UsuariosAdmin() {
   }, [esAdmin, token, recarga]);
 
   // ==========================================
-  // BUSCAR USUARIOS
+  // ACTUALIZAR EL SELECTOR DE ROL
+  // ==========================================
+
+  const seleccionarRol = (id, rol) => {
+
+    setRolesSeleccionados((anteriores) => ({
+      ...anteriores,
+      [id]: rol,
+    }));
+
+    setError("");
+    setExito("");
+
+  };
+
+  // ==========================================
+  // GUARDAR ROL EN MYSQL
+  // ==========================================
+
+  const guardarRol = async (usuario) => {
+
+    if (!esAdmin || !token) {
+      setError(
+        "Debes iniciar sesión como administrador."
+      );
+      return;
+    }
+
+    if (guardandoId !== null) return;
+
+    const nuevoRol = rolesSeleccionados[usuario.id];
+
+    const rolActual = String(
+      usuario.rol
+    ).toUpperCase();
+
+    if (!ROLES.includes(nuevoRol)) {
+      setError("Selecciona un rol válido.");
+      return;
+    }
+
+    if (nuevoRol === rolActual) {
+      return;
+    }
+
+    // Evitar modificar el rol de la propia cuenta.
+    // El backend también valida esta restricción.
+
+    if (
+      String(usuario.id) ===
+      String(usuarioActual?.id)
+    ) {
+      setError(
+        "No puedes cambiar el rol de tu propia cuenta."
+      );
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `¿Cambiar el rol de "${usuario.nombre}"?\n\n` +
+      `Rol actual: ${rolActual}\n` +
+      `Rol nuevo: ${nuevoRol}\n\n` +
+      "Este cambio se guardará en MySQL."
+    );
+
+    if (!confirmar) return;
+
+    setGuardandoId(usuario.id);
+    setError("");
+    setExito("");
+
+    try {
+
+      // ====================================
+      // PUT /api/v1/admin/usuarios/{id}/rol
+      // ====================================
+
+      const respuesta = await api.put(
+        `/admin/usuarios/${usuario.id}/rol`,
+        {
+          rol: nuevoRol,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Actualizar la tabla únicamente después
+      // de que Spring Boot confirme el cambio.
+
+      setUsuarios((anteriores) =>
+        anteriores.map((item) =>
+          String(item.id) === String(usuario.id)
+            ? respuesta.data
+            : item
+        )
+      );
+
+      setRolesSeleccionados((anteriores) => ({
+        ...anteriores,
+        [usuario.id]: String(
+          respuesta.data.rol
+        ).toUpperCase(),
+      }));
+
+      setExito(
+        `Rol de "${usuario.nombre}" actualizado a ${nuevoRol} correctamente.`
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Error al cambiar rol:",
+        err
+      );
+
+      const estado = err.response?.status;
+
+      if (estado === 400) {
+
+        setError(
+          "El rol seleccionado no es válido."
+        );
+
+      } else if (estado === 401) {
+
+        setError(
+          "Tu sesión venció. Inicia sesión nuevamente."
+        );
+
+      } else if (estado === 403) {
+
+        setError(
+          "No tienes permisos para modificar roles."
+        );
+
+      } else if (estado === 404) {
+
+        setError(
+          "El usuario ya no existe en MySQL."
+        );
+
+      } else if (estado === 409) {
+
+        setError(
+          "No se pudo modificar el rol porque existe una restricción de seguridad."
+        );
+
+      } else {
+
+        setError(
+          "No se pudo actualizar el rol. Revisa la conexión con Spring Boot."
+        );
+
+      }
+
+    } finally {
+
+      setGuardandoId(null);
+
+    }
+
+  };
+
+  // ==========================================
+  // BUSCADOR
   // ==========================================
 
   const texto = busqueda.trim().toLowerCase();
@@ -125,26 +306,18 @@ export default function UsuariosAdmin() {
   const usuariosFiltrados = usuarios.filter(
     (usuario) => {
 
-      const nombre = String(
-        usuario.nombre ?? ""
-      ).toLowerCase();
+      const contenido = [
+        usuario.id,
+        usuario.nombre,
+        usuario.correo,
+        usuario.rol,
+      ]
+        .map((valor) =>
+          String(valor ?? "").toLowerCase()
+        )
+        .join(" ");
 
-      const correo = String(
-        usuario.correo ?? ""
-      ).toLowerCase();
-
-      const rol = String(
-        usuario.rol ?? ""
-      ).toLowerCase();
-
-      const id = String(usuario.id ?? "");
-
-      return (
-        nombre.includes(texto) ||
-        correo.includes(texto) ||
-        rol.includes(texto) ||
-        id.includes(texto)
-      );
+      return contenido.includes(texto);
     }
   );
 
@@ -152,45 +325,11 @@ export default function UsuariosAdmin() {
   // CONTADORES
   // ==========================================
 
-  const totalUsuarios = usuarios.length;
-
-  const totalClientes = usuarios.filter(
-    (usuario) =>
-      String(usuario.rol).toUpperCase() === "CLIENTE"
-  ).length;
-
-  const totalVendedores = usuarios.filter(
-    (usuario) =>
-      String(usuario.rol).toUpperCase() === "VENDEDOR"
-  ).length;
-
-  const totalAdministradores = usuarios.filter(
-    (usuario) =>
-      String(usuario.rol).toUpperCase() === "ADMIN"
-  ).length;
-
-  // ==========================================
-  // COLOR SEGUN EL ROL
-  // ==========================================
-
-  const claseRol = (rol) => {
-
-    switch (String(rol).toUpperCase()) {
-
-      case "ADMIN":
-        return "badge bg-danger";
-
-      case "VENDEDOR":
-        return "badge bg-warning text-dark";
-
-      case "CLIENTE":
-        return "badge bg-success";
-
-      default:
-        return "badge bg-secondary";
-    }
-
-  };
+  const contarRol = (rol) =>
+    usuarios.filter(
+      (usuario) =>
+        String(usuario.rol).toUpperCase() === rol
+    ).length;
 
   // ==========================================
   // CONTROL DE ACCESO
@@ -200,11 +339,9 @@ export default function UsuariosAdmin() {
 
     return (
       <div className="container py-5">
-
         <div className="alert alert-danger">
           Acceso exclusivo para administradores.
         </div>
-
       </div>
     );
 
@@ -229,7 +366,7 @@ export default function UsuariosAdmin() {
           </h1>
 
           <p className="text-muted mb-0">
-            Usuarios registrados en Spring Boot y MySQL.
+            Usuarios y roles reales desde MySQL.
           </p>
 
         </div>
@@ -237,145 +374,106 @@ export default function UsuariosAdmin() {
         <button
           type="button"
           className="btn btn-outline-success"
-          disabled={cargando}
-          onClick={() =>
-            setRecarga((anterior) => anterior + 1)
-          }
+          disabled={cargando || guardandoId !== null}
+          onClick={() => {
+            setExito("");
+            setRecarga((anterior) => anterior + 1);
+          }}
         >
           🔄 Actualizar
         </button>
 
       </div>
 
-      {/* CARGANDO */}
+      {/* MENSAJES */}
+
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          ❌ {error}
+        </div>
+      )}
+
+      {exito && (
+        <div className="alert alert-success" role="status">
+          ✅ {exito}
+        </div>
+      )}
 
       {cargando && (
-
         <div className="alert alert-info">
           Cargando usuarios desde MySQL...
         </div>
-
       )}
 
-      {/* ERROR */}
-
-      {error && (
-
-        <div className="alert alert-danger">
-          {error}
-        </div>
-
-      )}
-
-      {!cargando && !error && (
+      {!cargando && (
 
         <>
 
-          {/* TARJETAS DE RESUMEN */}
+          {/* CONTADORES */}
 
           <div className="row g-3 mb-4">
 
-            <div className="col-md-3">
+            {[
+              {
+                titulo: "Total usuarios",
+                cantidad: usuarios.length,
+                color: "text-success",
+              },
+              {
+                titulo: "Clientes",
+                cantidad: contarRol("CLIENTE"),
+                color: "text-primary",
+              },
+              {
+                titulo: "Vendedores",
+                cantidad: contarRol("VENDEDOR"),
+                color: "text-warning",
+              },
+              {
+                titulo: "Administradores",
+                cantidad: contarRol("ADMIN"),
+                color: "text-danger",
+              },
+            ].map((tarjeta) => (
 
-              <div className="card border-0 shadow-sm h-100">
+              <div
+                className="col-md-3"
+                key={tarjeta.titulo}
+              >
 
-                <div className="card-body text-center">
+                <div className="card border-0 shadow-sm h-100">
 
-                  <p className="text-muted mb-1">
-                    Total usuarios
-                  </p>
+                  <div className="card-body text-center">
 
-                  <h2 className="fw-bold text-success">
-                    {totalUsuarios}
-                  </h2>
+                    <p className="text-muted mb-2">
+                      {tarjeta.titulo}
+                    </p>
 
-                </div>
+                    <h2
+                      className={`fw-bold ${tarjeta.color}`}
+                    >
+                      {tarjeta.cantidad}
+                    </h2>
 
-              </div>
-
-            </div>
-
-            <div className="col-md-3">
-
-              <div className="card border-0 shadow-sm h-100">
-
-                <div className="card-body text-center">
-
-                  <p className="text-muted mb-1">
-                    Clientes
-                  </p>
-
-                  <h2 className="fw-bold">
-                    {totalClientes}
-                  </h2>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <div className="col-md-3">
-
-              <div className="card border-0 shadow-sm h-100">
-
-                <div className="card-body text-center">
-
-                  <p className="text-muted mb-1">
-                    Vendedores
-                  </p>
-
-                  <h2 className="fw-bold text-warning">
-                    {totalVendedores}
-                  </h2>
+                  </div>
 
                 </div>
 
               </div>
 
-            </div>
-
-            <div className="col-md-3">
-
-              <div className="card border-0 shadow-sm h-100">
-
-                <div className="card-body text-center">
-
-                  <p className="text-muted mb-1">
-                    Administradores
-                  </p>
-
-                  <h2 className="fw-bold text-danger">
-                    {totalAdministradores}
-                  </h2>
-
-                </div>
-
-              </div>
-
-            </div>
+            ))}
 
           </div>
 
-          {/* TABLA DE USUARIOS */}
+          {/* TABLA */}
 
           <div className="card border-0 shadow-sm">
 
             <div className="card-body p-4">
 
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-
-                <h4 className="fw-bold text-success mb-0">
-                  📋 Usuarios registrados
-                </h4>
-
-                <span className="badge bg-success">
-                  {usuariosFiltrados.length} resultados
-                </span>
-
-              </div>
-
-              {/* BUSCADOR */}
+              <h4 className="fw-bold text-success mb-3">
+                📋 Usuarios registrados
+              </h4>
 
               <input
                 type="text"
@@ -404,16 +502,34 @@ export default function UsuariosAdmin() {
                       <tr>
                         <th>ID</th>
                         <th>Nombre</th>
-                        <th>Correo electrónico</th>
-                        <th>Rol</th>
+                        <th>Correo</th>
+                        <th>Rol actual</th>
+                        <th>Nuevo rol</th>
+                        <th>Acción</th>
                       </tr>
 
                     </thead>
 
                     <tbody>
 
-                      {usuariosFiltrados.map(
-                        (usuario) => (
+                      {usuariosFiltrados.map((usuario) => {
+
+                        const esMiCuenta =
+                          String(usuario.id) ===
+                          String(usuarioActual?.id);
+
+                        const rolActual = String(
+                          usuario.rol
+                        ).toUpperCase();
+
+                        const rolSeleccionado =
+                          rolesSeleccionados[usuario.id] ??
+                          rolActual;
+
+                        const tieneCambios =
+                          rolSeleccionado !== rolActual;
+
+                        return (
 
                           <tr key={usuario.id}>
 
@@ -423,6 +539,12 @@ export default function UsuariosAdmin() {
 
                             <td>
                               {usuario.nombre}
+
+                              {esMiCuenta && (
+                                <span className="badge bg-secondary ms-2">
+                                  Tú
+                                </span>
+                              )}
                             </td>
 
                             <td>
@@ -432,17 +554,75 @@ export default function UsuariosAdmin() {
                             <td>
 
                               <span
-                                className={claseRol(usuario.rol)}
+                                className={
+                                  rolActual === "ADMIN"
+                                    ? "badge bg-danger"
+                                    : rolActual === "VENDEDOR"
+                                      ? "badge bg-warning text-dark"
+                                      : "badge bg-success"
+                                }
                               >
-                                {usuario.rol}
+                                {rolActual}
                               </span>
+
+                            </td>
+
+                            <td>
+
+                              <select
+                                className="form-select form-select-sm"
+                                value={rolSeleccionado}
+                                disabled={
+                                  esMiCuenta ||
+                                  guardandoId !== null
+                                }
+                                onChange={(e) =>
+                                  seleccionarRol(
+                                    usuario.id,
+                                    e.target.value
+                                  )
+                                }
+                              >
+
+                                {ROLES.map((rol) => (
+                                  <option
+                                    key={rol}
+                                    value={rol}
+                                  >
+                                    {rol}
+                                  </option>
+                                ))}
+
+                              </select>
+
+                            </td>
+
+                            <td>
+
+                              <button
+                                type="button"
+                                className="btn btn-success btn-sm"
+                                disabled={
+                                  esMiCuenta ||
+                                  !tieneCambios ||
+                                  guardandoId !== null
+                                }
+                                onClick={() =>
+                                  guardarRol(usuario)
+                                }
+                              >
+                                {guardandoId === usuario.id
+                                  ? "Guardando..."
+                                  : "Guardar rol"}
+                              </button>
 
                             </td>
 
                           </tr>
 
-                        )
-                      )}
+                        );
+
+                      })}
 
                     </tbody>
 
@@ -456,19 +636,22 @@ export default function UsuariosAdmin() {
 
           </div>
 
-          {/* INFORMACION */}
+          {/* INFORMACION DE SEGURIDAD */}
 
           <div className="alert alert-info mt-4">
 
-            <strong>Seguridad:</strong> este panel consulta
-            los usuarios reales de MySQL mediante JWT.
+            <strong>Seguridad:</strong> solamente ADMIN
+            puede cambiar roles.
 
             <div className="mt-2">
+              No puedes modificar tu propio rol y
+              todos los cambios se guardan en MySQL.
+            </div>
 
-              Las contraseñas no se muestran.
-              Por ahora, la administración de usuarios
-              es solamente de consulta.
-
+            <div className="mt-2">
+              El usuario modificado debe cerrar sesión
+              y volver a iniciar para obtener un JWT
+              con su nuevo rol.
             </div>
 
           </div>
@@ -480,4 +663,5 @@ export default function UsuariosAdmin() {
     </div>
 
   );
+
 }
