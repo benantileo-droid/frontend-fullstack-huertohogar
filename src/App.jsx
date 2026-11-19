@@ -1,13 +1,34 @@
 
-import { useEffect, useState } from "react";
-import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import useProductosApi from "./hooks/useProductosApi";
-import { precioFinal } from "./utils/precios";
+import { useState } from "react";
 import {
-  crearProducto, actualizarProducto, eliminarProducto,
-  getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario, agregarCompra,
-  getCategorias, crearCategoria, actualizarCategoria, eliminarCategoria,
-  getOrdenes, crearOrden, descontarStock, renombrarCategoriaProductos,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+
+import useProductosApi from "./hooks/useProductosApi";
+import { useAuth } from "./context/AuthContext";
+import { useCarrito } from "./context/CarritoContext";
+
+import {
+  crearProducto,
+  actualizarProducto,
+  eliminarProducto,
+  getUsuarios,
+  crearUsuario,
+  actualizarUsuario,
+  eliminarUsuario,
+  agregarCompra,
+  getCategorias,
+  crearCategoria,
+  actualizarCategoria,
+  eliminarCategoria,
+  getOrdenes,
+  crearOrden,
+  descontarStock,
+  renombrarCategoriaProductos,
 } from "./data/db";
 
 import Home from "./pages/Home";
@@ -25,6 +46,7 @@ import Nosotros from "./pages/Nosotros";
 import Contacto from "./pages/Contacto";
 import Blog from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
+
 import RutaAdmin from "./components/RutaAdmin";
 import ProductForm from "./pages/admin/ProductForm";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
@@ -37,7 +59,6 @@ import AdminProductoForm from "./pages/admin/AdminProductoForm";
 import ProductosCriticos from "./pages/admin/ProductosCriticos";
 import AdminCategorias from "./pages/admin/AdminCategorias";
 import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
-import { useAuth } from "./context/AuthContext";
 
 export default function App() {
 
@@ -50,80 +71,81 @@ export default function App() {
     setProductos,
     cargando,
     error,
-    cargandoProductos,
-    errorProductos,
-    recargarProductos,
   } = useProductosApi();
 
   // =========================
-  // ESTADOS LOCALES
+  // CONTEXTO DE AUTENTICACION
   // =========================
 
-  const [categorias, setCategorias] = useState(getCategorias);
-  const [usuarios, setUsuarios] = useState(getUsuarios);
-  const [ordenes, setOrdenes] = useState(getOrdenes);
+  const {
+    usuarioActual,
+    cerrarSesion,
+  } = useAuth();
 
-  const [carrito, setCarrito] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("carrito")) || [];
-    } catch {
-      return [];
-    }
-  });
+  // =========================
+  // CONTEXTO DEL CARRITO
+  // =========================
 
- const { usuarioActual, cerrarSesion } = useAuth();
+  const {
+    carrito,
+    agregarAlCarrito,
+    eliminarDelCarrito,
+    aumentarCantidad,
+    disminuirCantidad,
+    vaciarCarrito,
+  } = useCarrito();
 
-  const [busqueda, setBusqueda] = useState("");
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todas");
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [productoEditando, setProductoEditando] = useState(null);
-  const [modoAdmin, setModoAdmin] = useState(false);
+  // =========================
+  // ESTADOS DEL PROYECTO
+  // =========================
+
+  const [categorias, setCategorias] =
+    useState(getCategorias);
+
+  const [usuarios, setUsuarios] =
+    useState(getUsuarios);
+
+  const [ordenes, setOrdenes] =
+    useState(getOrdenes);
+
+  const [busqueda, setBusqueda] =
+    useState("");
+
+  const [
+    categoriaSeleccionada,
+    setCategoriaSeleccionada,
+  ] = useState("Todas");
+
+  const [mostrarFormulario, setMostrarFormulario] =
+    useState(false);
+
+  const [productoEditando, setProductoEditando] =
+    useState(null);
+
+  const [modoAdmin, setModoAdmin] =
+    useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const esRutaAdmin = location.pathname.startsWith("/admin");
+  const esRutaAdmin =
+    location.pathname.startsWith("/admin");
 
   // =========================
-  // GUARDAR SESION Y CARRITO
+  // ADMINISTRACION DE USUARIOS
+  // TODAVIA LOCAL
   // =========================
-
-
-
-  useEffect(() => {
-    localStorage.setItem(
-      "carrito",
-      JSON.stringify(carrito)
-    );
-  }, [carrito]);
-
-  // =========================
-  // USUARIOS
-  // =========================
-
-  const handleRegisterUser = (nuevoUsuario) => {
-    setUsuarios(crearUsuario(nuevoUsuario));
-  };
-
-
 
   const handleCrearUsuario = (datos) => {
     setUsuarios(crearUsuario(datos));
   };
 
   const handleActualizarUsuario = (id, cambios) => {
-    const seguros = usuarioActual?.id === id
+    const datos = usuarioActual?.id === id
       ? { ...cambios, rol: usuarioActual.rol }
       : cambios;
 
-    setUsuarios(actualizarUsuario(id, seguros));
-
-    if (usuarioActual?.id === id) {
-      setUsuarioActual((actual) => ({
-        ...actual,
-        ...seguros,
-      }));
-    }
+    setUsuarios(actualizarUsuario(id, datos));
   };
 
   const handleEliminarUsuario = (id) => {
@@ -135,22 +157,23 @@ export default function App() {
     setUsuarios(eliminarUsuario(id));
   };
 
- const handleLogout = () => {
-  // Eliminar JWT y cerrar la sesion real
-  cerrarSesion();
+  // =========================
+  // CERRAR SESION
+  // =========================
 
-  // Limpiar el carrito para no compartirlo
-  // con otro usuario que inicie sesion
-  setCarrito([]);
+  const handleLogout = () => {
 
-  // Cerrar las herramientas de administracion
-  setModoAdmin(false);
-  setMostrarFormulario(false);
-  setProductoEditando(null);
+    cerrarSesion();
 
-  // Regresar al inicio
-  navigate("/");
-};
+    // Limpiar el carrito al cerrar sesion
+    vaciarCarrito();
+
+    setModoAdmin(false);
+    setMostrarFormulario(false);
+    setProductoEditando(null);
+
+    navigate("/");
+  };
 
   // =========================
   // COMPRA ANTIGUA
@@ -158,128 +181,56 @@ export default function App() {
   // =========================
 
   const handleCompraExitosa = (orden) => {
+
     setOrdenes(crearOrden(orden));
 
+    // Esta funcionalidad sigue siendo local.
     setProductos(descontarStock(orden.productos));
 
     if (!usuarioActual) return;
 
-    setUsuarios(agregarCompra(usuarioActual.id, orden));
-
-    setUsuarioActual((actual) => ({
-      ...actual,
-      compras: [...(actual.compras || []), orden],
-    }));
+    setUsuarios(
+      agregarCompra(usuarioActual.id, orden)
+    );
   };
 
   // =========================
-  // CARRITO DE COMPRAS
+  // CARRITO DESDE CONTEXT
   // =========================
 
-  const handleAddToCart = (producto) => {
-    const stock = typeof producto.stock === "number"
-      ? producto.stock
-      : Infinity;
+  // Conservamos los nombres que esperan
+  // nuestros componentes existentes.
 
-    const cantidadActual = carrito.find(
-      (p) => p.id === producto.id
-    )?.cantidad || 0;
+  const handleAddToCart = agregarAlCarrito;
 
-    if (stock <= 0) {
-      alert("Producto sin stock");
-      return;
-    }
+  const handleClearCart = vaciarCarrito;
 
-    if (cantidadActual >= stock) {
-      alert(
-        `Solo quedan ${stock} unidades de ${producto.nombre}`
-      );
-      return;
-    }
+  const handleRemoveFromCart = eliminarDelCarrito;
 
-    setCarrito((actual) => {
-      const existe = actual.find(
-        (p) => p.id === producto.id
-      );
+  const handleIncreaseQuantity = aumentarCantidad;
 
-      if (existe) {
-        return actual.map((p) =>
-          p.id === producto.id
-            ? { ...p, cantidad: p.cantidad + 1 }
-            : p
-        );
-      }
-
-      return [
-        ...actual,
-        {
-          ...producto,
-          precio: precioFinal(producto),
-          cantidad: 1,
-        },
-      ];
-    });
-  };
-
-  const handleClearCart = () => {
-    setCarrito([]);
-  };
-
-  const handleRemoveFromCart = (id) => {
-    setCarrito((actual) =>
-      actual.filter((p) => p.id !== id)
-    );
-  };
-
-  const handleIncreaseQuantity = (id) => {
-    const producto = productos.find((p) => p.id === id);
-
-    const stock = typeof producto?.stock === "number"
-      ? producto.stock
-      : Infinity;
-
-    const cantidadActual = carrito.find(
-      (p) => p.id === id
-    )?.cantidad || 0;
-
-    if (cantidadActual >= stock) {
-      alert("No hay más stock disponible");
-      return;
-    }
-
-    setCarrito((actual) =>
-      actual.map((p) =>
-        p.id === id
-          ? { ...p, cantidad: p.cantidad + 1 }
-          : p
-      )
-    );
-  };
-
-  const handleDecreaseQuantity = (id) => {
-    setCarrito((actual) =>
-      actual
-        .map((p) =>
-          p.id === id
-            ? { ...p, cantidad: p.cantidad - 1 }
-            : p
-        )
-        .filter((p) => p.cantidad > 0)
-    );
-  };
+  const handleDecreaseQuantity = disminuirCantidad;
 
   // =========================
   // ADMINISTRACION DE PRODUCTOS
-  // PENDIENTE CONECTAR A LA API
+  // TODAVIA LOCAL
   // =========================
 
   const handleSaveProduct = (datos) => {
+
     if (productoEditando) {
+
       setProductos(
-        actualizarProducto(productoEditando.id, datos)
+        actualizarProducto(
+          productoEditando.id,
+          datos
+        )
       );
+
       setProductoEditando(null);
+
     } else {
+
       setProductos(crearProducto(datos));
     }
 
@@ -300,6 +251,7 @@ export default function App() {
 
   // =========================
   // ADMINISTRACION DE CATEGORIAS
+  // TODAVIA LOCAL
   // =========================
 
   const handleCrearCategoria = (datos) => {
@@ -307,8 +259,9 @@ export default function App() {
   };
 
   const handleActualizarCategoria = (id, cambios) => {
+
     const anterior = categorias.find(
-      (c) => c.id === id
+      (categoria) => categoria.id === id
     );
 
     setCategorias(actualizarCategoria(id, cambios));
@@ -318,6 +271,7 @@ export default function App() {
       cambios.nombre &&
       cambios.nombre !== anterior.nombre
     ) {
+
       setProductos(
         renombrarCategoriaProductos(
           anterior.nombre,
@@ -332,10 +286,11 @@ export default function App() {
   };
 
   // =========================
-  // FORMULARIO ADMIN
+  // FORMULARIO DE PRODUCTOS
   // =========================
 
   const handleEditProduct = (producto) => {
+
     setProductoEditando(producto);
     setMostrarFormulario(true);
 
@@ -347,6 +302,7 @@ export default function App() {
   };
 
   const handleNewProduct = () => {
+
     setProductoEditando(null);
     setMostrarFormulario(true);
 
@@ -361,14 +317,19 @@ export default function App() {
   // BUSQUEDA Y FILTROS
   // =========================
 
-  const productosFiltrados = productos.filter((p) =>
-    p.nombre.toLowerCase().includes(
-      busqueda.toLowerCase()
-    ) &&
-    (
-      categoriaSeleccionada === "Todas" ||
-      p.categoria === categoriaSeleccionada
-    )
+  const productosFiltrados = productos.filter(
+    (producto) => {
+
+      const coincideNombre = producto.nombre
+        .toLowerCase()
+        .includes(busqueda.toLowerCase());
+
+      const coincideCategoria =
+        categoriaSeleccionada === "Todas" ||
+        producto.categoria === categoriaSeleccionada;
+
+      return coincideNombre && coincideCategoria;
+    }
   );
 
   // =========================
@@ -382,6 +343,7 @@ export default function App() {
 
       {!esRutaAdmin && (
         <nav className="navbar navbar-expand-lg navbar-dark bg-success sticky-top shadow-sm d-print-none">
+
           <div className="container-fluid px-4">
 
             <Link
@@ -440,28 +402,22 @@ export default function App() {
 
                 {!usuarioActual ? (
                   <>
-                    <Link
-                      className="nav-link"
-                      to="/registro"
-                    >
+                    <Link className="nav-link" to="/registro">
                       Registro
                     </Link>
 
-                    <Link
-                      className="nav-link text-nowrap"
-                      to="/login"
-                    >
+                    <Link className="nav-link" to="/login">
                       Iniciar Sesión
                     </Link>
                   </>
                 ) : (
                   <>
-                    <span className="nav-link text-white-50 text-nowrap">
+                    <span className="nav-link text-white-50">
                       👤 {usuarioActual.nombre}
                     </span>
 
                     <button
-                      className="btn btn-link nav-link text-nowrap"
+                      className="btn btn-link nav-link"
                       onClick={handleLogout}
                     >
                       Cerrar sesión
@@ -469,10 +425,7 @@ export default function App() {
                   </>
                 )}
 
-                <Link
-                  className="nav-link text-nowrap"
-                  to="/carrito"
-                >
+                <Link className="nav-link" to="/carrito">
                   🛒 ({carrito.length})
                 </Link>
 
@@ -525,16 +478,11 @@ export default function App() {
         </nav>
       )}
 
-      {/* ========================= */}
       {/* RUTAS DE LA TIENDA */}
-      {/* ========================= */}
 
       <Routes>
 
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/" element={<Home />} />
 
         <Route
           path="/productos"
@@ -543,16 +491,9 @@ export default function App() {
               productos={productos}
               categorias={categorias}
               productosFiltrados={productosFiltrados}
-              cargandoProductos={
-                cargandoProductos ?? cargando ?? false
-              }
-              errorProductos={
-                errorProductos ?? error ?? ""
-              }
-              recargarProductos={
-                recargarProductos ||
-                (() => window.location.reload())
-              }
+              cargandoProductos={cargando}
+              errorProductos={error}
+              recargarProductos={() => window.location.reload()}
               categoriaSeleccionada={categoriaSeleccionada}
               setCategoriaSeleccionada={setCategoriaSeleccionada}
               onAddToCart={handleAddToCart}
@@ -641,46 +582,19 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/registro"
-          element={
-            <Registro
-              onRegister={handleRegisterUser}
-              usuarios={usuarios}
-            />
-          }
-        />
+        <Route path="/registro" element={<Registro />} />
 
-        <Route
-          path="/login"
-          element={
-            <Login />
-          }
-        />
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/nosotros"
-          element={<Nosotros />}
-        />
+        <Route path="/nosotros" element={<Nosotros />} />
 
-        <Route
-          path="/contacto"
-          element={<Contacto />}
-        />
+        <Route path="/contacto" element={<Contacto />} />
 
-        <Route
-          path="/blog"
-          element={<Blog />}
-        />
+        <Route path="/blog" element={<Blog />} />
 
-        <Route
-          path="/blog/:id"
-          element={<BlogDetail />}
-        />
+        <Route path="/blog/:id" element={<BlogDetail />} />
 
-        {/* ========================= */}
         {/* PANEL ADMINISTRADOR */}
-        {/* ========================= */}
 
         <Route
           path="/admin"
@@ -800,9 +714,10 @@ export default function App() {
           />
 
         </Route>
+
       </Routes>
 
-      {/* FORMULARIO DE PRODUCTOS */}
+      {/* FORMULARIO ADMIN */}
 
       {mostrarFormulario && (
         <div
@@ -825,15 +740,15 @@ export default function App() {
 
       <footer className="bg-dark text-white py-4 mt-5 d-print-none">
         <div className="container text-center">
-
           <p className="m-0 fw-light">
-            🌱 <strong>Huerto Hogar</strong> - Evaluación FullStack DSY1104 | Duoc UC
+            🌱 <strong>Huerto Hogar</strong> -
+            Evaluación FullStack DSY1104 | Duoc UC
           </p>
 
           <small className="text-secondary">
-            Desarrollado con React, Bootstrap, Jasmine y Karma
+            Desarrollado con React, Bootstrap,
+            Jasmine y Karma
           </small>
-
         </div>
       </footer>
 
