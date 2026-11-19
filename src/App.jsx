@@ -8,14 +8,19 @@ import {
   useLocation,
 } from "react-router-dom";
 
+// ==========================================
 // HOOKS Y CONTEXTOS
+// ==========================================
+
 import useProductosApi from "./hooks/useProductosApi";
 import { useAuth } from "./context/AuthContext";
 import { useCarrito } from "./context/CarritoContext";
-import useProductosApi from "./hooks/useProductosApi";
 
+// ==========================================
 // BASE DE DATOS LOCAL
-// Estas funciones se migraran posteriormente al backend
+// PENDIENTE MIGRAR AL BACKEND
+// ==========================================
+
 import {
   crearProducto,
   actualizarProducto,
@@ -35,7 +40,10 @@ import {
   renombrarCategoriaProductos,
 } from "./data/db";
 
+// ==========================================
 // PAGINAS DE LA TIENDA
+// ==========================================
+
 import Home from "./pages/Home";
 import Productos from "./pages/Productos";
 import Categoria from "./pages/Categoria";
@@ -53,7 +61,10 @@ import Blog from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
 import MisCompras from "./pages/MisCompras";
 
-// COMPONENTES DE ADMINISTRACION
+// ==========================================
+// PAGINAS ADMINISTRATIVAS
+// ==========================================
+
 import RutaAdmin from "./components/RutaAdmin";
 import ProductForm from "./pages/admin/ProductForm";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
@@ -70,7 +81,7 @@ import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
 export default function App() {
 
   // ==========================================
-  // PRODUCTOS DESDE SPRING BOOT Y MYSQL
+  // PRODUCTOS DESDE SPRING BOOT / MYSQL
   // ==========================================
 
   const {
@@ -90,7 +101,7 @@ export default function App() {
   } = useAuth();
 
   // ==========================================
-  // CARRITO GLOBAL
+  // CARRITO GLOBAL CON REACT CONTEXT
   // ==========================================
 
   const {
@@ -103,7 +114,7 @@ export default function App() {
   } = useCarrito();
 
   // ==========================================
-  // ESTADOS QUE AUN UTILIZAN LOGICA LOCAL
+  // ESTADOS DE ADMINISTRACION LOCAL
   // ==========================================
 
   const [categorias, setCategorias] =
@@ -132,6 +143,10 @@ export default function App() {
   const [modoAdmin, setModoAdmin] =
     useState(false);
 
+  // ==========================================
+  // NAVEGACION
+  // ==========================================
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -140,6 +155,7 @@ export default function App() {
 
   // ==========================================
   // ADMINISTRACION DE USUARIOS
+  // TODAVIA LOCAL
   // ==========================================
 
   const handleCrearUsuario = (datos) => {
@@ -176,13 +192,10 @@ export default function App() {
 
   const handleLogout = () => {
 
-    // Cerrar sesion JWT
     cerrarSesion();
 
-    // Limpiar carrito
     vaciarCarrito();
 
-    // Limpiar estados administrativos
     setModoAdmin(false);
     setMostrarFormulario(false);
     setProductoEditando(null);
@@ -191,7 +204,7 @@ export default function App() {
   };
 
   // ==========================================
-  // COMPRA ANTIGUA
+  // COMPRA ANTIGUA LOCAL
   // PENDIENTE DE ELIMINAR
   // ==========================================
 
@@ -277,6 +290,7 @@ export default function App() {
 
   // ==========================================
   // ADMINISTRACION DE CATEGORIAS
+  // TODAVIA LOCAL
   // ==========================================
 
   const handleCrearCategoria = (datos) => {
@@ -379,10 +393,11 @@ export default function App() {
     <div className="bg-light min-vh-100 d-flex flex-column">
 
       {/* ==================================== */}
-      {/* BARRA DE NAVEGACION */}
+      {/* NAVBAR */}
       {/* ==================================== */}
 
       {!esRutaAdmin && (
+
         <nav className="navbar navbar-expand-lg navbar-dark bg-success sticky-top shadow-sm d-print-none">
 
           <div className="container-fluid px-4">
@@ -465,7 +480,9 @@ export default function App() {
                 {/* USUARIO SIN SESION */}
 
                 {!usuarioActual ? (
+
                   <>
+
                     <Link
                       className="nav-link"
                       to="/registro"
@@ -479,8 +496,11 @@ export default function App() {
                     >
                       Iniciar Sesión
                     </Link>
+
                   </>
+
                 ) : (
+
                   <>
 
                     {/* USUARIO AUTENTICADO */}
@@ -497,7 +517,7 @@ export default function App() {
                       Cerrar sesión
                     </button>
 
-                    {/* NUEVO: HISTORIAL DE COMPRAS */}
+                    {/* HISTORIAL DE COMPRAS */}
 
                     <Link
                       className="nav-link"
@@ -507,6 +527,22 @@ export default function App() {
                     </Link>
 
                   </>
+
+                )}
+
+                {/* ================================= */}
+                {/* NUEVO: PANEL VENDEDOR */}
+                {/* ================================= */}
+
+                {usuarioActual?.rol === "vendedor" && (
+
+                  <Link
+                    className="nav-link"
+                    to="/vendedor/ordenes"
+                  >
+                    🧾 Panel Vendedor
+                  </Link>
+
                 )}
 
                 {/* CARRITO */}
@@ -520,7 +556,9 @@ export default function App() {
 
               </div>
 
+              {/* ================================= */}
               {/* BUSCADOR Y ADMINISTRACION */}
+              {/* ================================= */}
 
               <div className="d-flex flex-column flex-xl-row gap-2 my-2 my-lg-0">
 
@@ -534,7 +572,10 @@ export default function App() {
                   }
                 />
 
+                {/* SOLO ADMIN */}
+
                 {usuarioActual?.rol === "admin" && (
+
                   <>
 
                     <Link
@@ -548,9 +589,13 @@ export default function App() {
                       type="button"
                       className="btn btn-outline-light rounded-pill text-nowrap"
                       onClick={() => {
+
                         setModoAdmin(!modoAdmin);
+
                         setMostrarFormulario(false);
+
                         setProductoEditando(null);
+
                       }}
                     >
                       {modoAdmin
@@ -566,13 +611,16 @@ export default function App() {
                     </Link>
 
                   </>
+
                 )}
 
               </div>
 
             </div>
           </div>
+
         </nav>
+
       )}
 
       {/* ==================================== */}
@@ -581,18 +629,23 @@ export default function App() {
 
       <Routes>
 
+        {/* ================================= */}
         {/* INICIO */}
+        {/* ================================= */}
 
         <Route
           path="/"
           element={<Home />}
         />
 
+        {/* ================================= */}
         {/* PRODUCTOS */}
+        {/* ================================= */}
 
         <Route
           path="/productos"
           element={
+
             <Productos
               productos={productos}
               categorias={categorias}
@@ -610,64 +663,82 @@ export default function App() {
               modoAdmin={modoAdmin}
               onNewProduct={handleNewProduct}
             />
+
           }
         />
 
+        {/* ================================= */}
         {/* CATEGORIAS */}
+        {/* ================================= */}
 
         <Route
           path="/categorias"
           element={
+
             <Categoria
               categorias={categorias}
               productos={productos}
               onAddToCart={handleAddToCart}
             />
+
           }
         />
 
         <Route
           path="/categorias/:nombre"
           element={
+
             <Categoria
               categorias={categorias}
               productos={productos}
               onAddToCart={handleAddToCart}
             />
+
           }
         />
 
+        {/* ================================= */}
         {/* OFERTAS */}
+        {/* ================================= */}
 
         <Route
           path="/ofertas"
           element={
+
             <Ofertas
               productos={productos}
               onAddToCart={handleAddToCart}
             />
+
           }
         />
 
+        {/* ================================= */}
         {/* CARRITO */}
+        {/* ================================= */}
 
         <Route
           path="/carrito"
           element={
+
             <Carrito
               carrito={carrito}
               onRemove={handleRemoveFromCart}
               onIncrease={handleIncreaseQuantity}
               onDecrease={handleDecreaseQuantity}
             />
+
           }
         />
 
+        {/* ================================= */}
         {/* CHECKOUT */}
+        {/* ================================= */}
 
         <Route
           path="/checkout"
           element={
+
             <Checkout
               carrito={carrito}
               productos={productos}
@@ -675,10 +746,13 @@ export default function App() {
               usuarioActual={usuarioActual}
               onCompraExitosa={handleCompraExitosa}
             />
+
           }
         />
 
+        {/* ================================= */}
         {/* RESULTADOS DE COMPRA */}
+        {/* ================================= */}
 
         <Route
           path="/compra-exitosa"
@@ -690,19 +764,25 @@ export default function App() {
           element={<CompraFallida />}
         />
 
+        {/* ================================= */}
         {/* DETALLE DE PRODUCTO */}
+        {/* ================================= */}
 
         <Route
           path="/productos/:id"
           element={
+
             <ProductDetail
               productos={productos}
               onAddToCart={handleAddToCart}
             />
+
           }
         />
 
-        {/* AUTENTICACION */}
+        {/* ================================= */}
+        {/* REGISTRO Y LOGIN */}
+        {/* ================================= */}
 
         <Route
           path="/registro"
@@ -715,7 +795,7 @@ export default function App() {
         />
 
         {/* ================================= */}
-        {/* NUEVA RUTA: MIS COMPRAS */}
+        {/* MIS COMPRAS - CLIENTES */}
         {/* ================================= */}
 
         <Route
@@ -723,7 +803,9 @@ export default function App() {
           element={<MisCompras />}
         />
 
+        {/* ================================= */}
         {/* INFORMACION DE LA TIENDA */}
+        {/* ================================= */}
 
         <Route
           path="/nosotros"
@@ -735,7 +817,9 @@ export default function App() {
           element={<Contacto />}
         />
 
+        {/* ================================= */}
         {/* BLOG */}
+        {/* ================================= */}
 
         <Route
           path="/blog"
@@ -747,19 +831,50 @@ export default function App() {
           element={<BlogDetail />}
         />
 
-        {/* ================================= */}
+        {/* ========================================== */}
+        {/* NUEVO: PANEL EXCLUSIVO DEL VENDEDOR */}
+        {/* ========================================== */}
+
+        <Route
+          path="/vendedor/ordenes"
+          element={
+
+            usuarioActual?.rol === "vendedor" ? (
+
+              <Ordenes />
+
+            ) : (
+
+              <div className="container py-5">
+
+                <div className="alert alert-danger">
+                  Acceso exclusivo para vendedores.
+                </div>
+
+              </div>
+
+            )
+
+          }
+        />
+
+        {/* ========================================== */}
         {/* PANEL ADMINISTRADOR */}
-        {/* ================================= */}
+        {/* ========================================== */}
 
         <Route
           path="/admin"
           element={
+
             <RutaAdmin usuarioActual={usuarioActual}>
+
               <AdminLayout
                 usuarioActual={usuarioActual}
                 onLogout={handleLogout}
               />
+
             </RutaAdmin>
+
           }
         >
 
@@ -768,15 +883,17 @@ export default function App() {
           <Route
             index
             element={
+
               <Dashboard
                 productos={productos}
                 usuarios={usuarios}
                 ordenes={ordenes}
               />
+
             }
           />
 
-          {/* ORDENES */}
+          {/* ORDENES ADMIN */}
 
           <Route
             path="ordenes"
@@ -797,66 +914,78 @@ export default function App() {
           <Route
             path="usuarios"
             element={
+
               <UsuariosAdmin
                 usuarios={usuarios}
                 onDelete={handleEliminarUsuario}
               />
+
             }
           />
 
           <Route
             path="usuarios/nuevo"
             element={
+
               <AdminUsuarioForm
                 usuarios={usuarios}
                 onCreate={handleCrearUsuario}
               />
+
             }
           />
 
           <Route
             path="usuarios/:id/editar"
             element={
+
               <AdminUsuarioForm
                 usuarios={usuarios}
                 onUpdate={handleActualizarUsuario}
               />
+
             }
           />
 
-          {/* PRODUCTOS */}
+          {/* PRODUCTOS ADMIN */}
 
           <Route
             path="productos"
             element={
+
               <AdminProductos
                 productos={productos}
                 onDelete={handleDeleteProduct}
               />
+
             }
           />
 
           <Route
             path="productos/nuevo"
             element={
+
               <AdminProductoForm
                 productos={productos}
                 categorias={categorias}
                 onCreate={handleCrearProducto}
                 onUpdate={handleActualizarProducto}
               />
+
             }
           />
 
           <Route
             path="productos/:id/editar"
             element={
+
               <AdminProductoForm
                 productos={productos}
                 categorias={categorias}
                 onCreate={handleCrearProducto}
                 onUpdate={handleActualizarProducto}
               />
+
             }
           />
 
@@ -865,17 +994,20 @@ export default function App() {
           <Route
             path="productos-criticos"
             element={
+
               <ProductosCriticos
                 productos={productos}
               />
+
             }
           />
 
-          {/* CATEGORIAS */}
+          {/* CATEGORIAS ADMIN */}
 
           <Route
             path="categorias"
             element={
+
               <AdminCategorias
                 categorias={categorias}
                 productos={productos}
@@ -883,6 +1015,7 @@ export default function App() {
                 onUpdate={handleActualizarCategoria}
                 onDelete={handleEliminarCategoria}
               />
+
             }
           />
 
@@ -895,6 +1028,7 @@ export default function App() {
       {/* ==================================== */}
 
       {mostrarFormulario && (
+
         <div
           id="formulario-admin"
           className="container my-4 flex-grow-1"
@@ -911,8 +1045,11 @@ export default function App() {
               />
 
             </div>
+
           </div>
+
         </div>
+
       )}
 
       {/* ==================================== */}
@@ -924,16 +1061,21 @@ export default function App() {
         <div className="container text-center">
 
           <p className="m-0 fw-light">
+
             🌱 <strong>Huerto Hogar</strong> -
             Evaluación FullStack DSY1104 | Duoc UC
+
           </p>
 
           <small className="text-secondary">
+
             Desarrollado con React, Bootstrap,
             Jasmine y Karma
+
           </small>
 
         </div>
+
       </footer>
 
     </div>
