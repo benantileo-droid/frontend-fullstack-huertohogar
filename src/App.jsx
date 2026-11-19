@@ -8,10 +8,13 @@ import {
   useLocation,
 } from "react-router-dom";
 
+// HOOKS Y CONTEXTOS
 import useProductosApi from "./hooks/useProductosApi";
 import { useAuth } from "./context/AuthContext";
 import { useCarrito } from "./context/CarritoContext";
 
+// BASE DE DATOS LOCAL
+// Estas funciones se migraran posteriormente al backend
 import {
   crearProducto,
   actualizarProducto,
@@ -31,6 +34,7 @@ import {
   renombrarCategoriaProductos,
 } from "./data/db";
 
+// PAGINAS DE LA TIENDA
 import Home from "./pages/Home";
 import Productos from "./pages/Productos";
 import Categoria from "./pages/Categoria";
@@ -46,7 +50,9 @@ import Nosotros from "./pages/Nosotros";
 import Contacto from "./pages/Contacto";
 import Blog from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
+import MisCompras from "./pages/MisCompras";
 
+// COMPONENTES DE ADMINISTRACION
 import RutaAdmin from "./components/RutaAdmin";
 import ProductForm from "./pages/admin/ProductForm";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
@@ -62,9 +68,9 @@ import AdminUsuarioForm from "./pages/admin/AdminUsuarioForm";
 
 export default function App() {
 
-  // =========================
-  // PRODUCTOS DESDE MYSQL
-  // =========================
+  // ==========================================
+  // PRODUCTOS DESDE SPRING BOOT Y MYSQL
+  // ==========================================
 
   const {
     productos,
@@ -73,18 +79,18 @@ export default function App() {
     error,
   } = useProductosApi();
 
-  // =========================
-  // CONTEXTO DE AUTENTICACION
-  // =========================
+  // ==========================================
+  // AUTENTICACION CON JWT
+  // ==========================================
 
   const {
     usuarioActual,
     cerrarSesion,
   } = useAuth();
 
-  // =========================
-  // CONTEXTO DEL CARRITO
-  // =========================
+  // ==========================================
+  // CARRITO GLOBAL
+  // ==========================================
 
   const {
     carrito,
@@ -95,9 +101,9 @@ export default function App() {
     vaciarCarrito,
   } = useCarrito();
 
-  // =========================
-  // ESTADOS DEL PROYECTO
-  // =========================
+  // ==========================================
+  // ESTADOS QUE AUN UTILIZAN LOGICA LOCAL
+  // ==========================================
 
   const [categorias, setCategorias] =
     useState(getCategorias);
@@ -131,24 +137,30 @@ export default function App() {
   const esRutaAdmin =
     location.pathname.startsWith("/admin");
 
-  // =========================
+  // ==========================================
   // ADMINISTRACION DE USUARIOS
-  // TODAVIA LOCAL
-  // =========================
+  // ==========================================
 
   const handleCrearUsuario = (datos) => {
     setUsuarios(crearUsuario(datos));
   };
 
   const handleActualizarUsuario = (id, cambios) => {
+
     const datos = usuarioActual?.id === id
-      ? { ...cambios, rol: usuarioActual.rol }
+      ? {
+          ...cambios,
+          rol: usuarioActual.rol,
+        }
       : cambios;
 
-    setUsuarios(actualizarUsuario(id, datos));
+    setUsuarios(
+      actualizarUsuario(id, datos)
+    );
   };
 
   const handleEliminarUsuario = (id) => {
+
     if (usuarioActual?.id === id) {
       alert("No puedes eliminar tu propio usuario");
       return;
@@ -157,17 +169,19 @@ export default function App() {
     setUsuarios(eliminarUsuario(id));
   };
 
-  // =========================
+  // ==========================================
   // CERRAR SESION
-  // =========================
+  // ==========================================
 
   const handleLogout = () => {
 
+    // Cerrar sesion JWT
     cerrarSesion();
 
-    // Limpiar el carrito al cerrar sesion
+    // Limpiar carrito
     vaciarCarrito();
 
+    // Limpiar estados administrativos
     setModoAdmin(false);
     setMostrarFormulario(false);
     setProductoEditando(null);
@@ -175,17 +189,20 @@ export default function App() {
     navigate("/");
   };
 
-  // =========================
+  // ==========================================
   // COMPRA ANTIGUA
-  // PENDIENTE CONECTAR A MYSQL
-  // =========================
+  // PENDIENTE DE ELIMINAR
+  // ==========================================
 
   const handleCompraExitosa = (orden) => {
 
-    setOrdenes(crearOrden(orden));
+    setOrdenes(
+      crearOrden(orden)
+    );
 
-    // Esta funcionalidad sigue siendo local.
-    setProductos(descontarStock(orden.productos));
+    setProductos(
+      descontarStock(orden.productos)
+    );
 
     if (!usuarioActual) return;
 
@@ -194,12 +211,9 @@ export default function App() {
     );
   };
 
-  // =========================
-  // CARRITO DESDE CONTEXT
-  // =========================
-
-  // Conservamos los nombres que esperan
-  // nuestros componentes existentes.
+  // ==========================================
+  // FUNCIONES DEL CARRITO
+  // ==========================================
 
   const handleAddToCart = agregarAlCarrito;
 
@@ -211,10 +225,10 @@ export default function App() {
 
   const handleDecreaseQuantity = disminuirCantidad;
 
-  // =========================
+  // ==========================================
   // ADMINISTRACION DE PRODUCTOS
   // TODAVIA LOCAL
-  // =========================
+  // ==========================================
 
   const handleSaveProduct = (datos) => {
 
@@ -231,31 +245,44 @@ export default function App() {
 
     } else {
 
-      setProductos(crearProducto(datos));
+      setProductos(
+        crearProducto(datos)
+      );
     }
 
     setMostrarFormulario(false);
   };
 
   const handleDeleteProduct = (id) => {
-    setProductos(eliminarProducto(id));
+
+    setProductos(
+      eliminarProducto(id)
+    );
   };
 
   const handleCrearProducto = (datos) => {
-    setProductos(crearProducto(datos));
+
+    setProductos(
+      crearProducto(datos)
+    );
   };
 
   const handleActualizarProducto = (id, datos) => {
-    setProductos(actualizarProducto(id, datos));
+
+    setProductos(
+      actualizarProducto(id, datos)
+    );
   };
 
-  // =========================
+  // ==========================================
   // ADMINISTRACION DE CATEGORIAS
-  // TODAVIA LOCAL
-  // =========================
+  // ==========================================
 
   const handleCrearCategoria = (datos) => {
-    setCategorias(crearCategoria(datos));
+
+    setCategorias(
+      crearCategoria(datos)
+    );
   };
 
   const handleActualizarCategoria = (id, cambios) => {
@@ -264,7 +291,9 @@ export default function App() {
       (categoria) => categoria.id === id
     );
 
-    setCategorias(actualizarCategoria(id, cambios));
+    setCategorias(
+      actualizarCategoria(id, cambios)
+    );
 
     if (
       anterior &&
@@ -282,12 +311,15 @@ export default function App() {
   };
 
   const handleEliminarCategoria = (id) => {
-    setCategorias(eliminarCategoria(id));
+
+    setCategorias(
+      eliminarCategoria(id)
+    );
   };
 
-  // =========================
+  // ==========================================
   // FORMULARIO DE PRODUCTOS
-  // =========================
+  // ==========================================
 
   const handleEditProduct = (producto) => {
 
@@ -297,7 +329,9 @@ export default function App() {
     setTimeout(() => {
       document
         .getElementById("formulario-admin")
-        ?.scrollIntoView({ behavior: "smooth" });
+        ?.scrollIntoView({
+          behavior: "smooth",
+        });
     }, 100);
   };
 
@@ -309,20 +343,24 @@ export default function App() {
     setTimeout(() => {
       document
         .getElementById("formulario-admin")
-        ?.scrollIntoView({ behavior: "smooth" });
+        ?.scrollIntoView({
+          behavior: "smooth",
+        });
     }, 100);
   };
 
-  // =========================
+  // ==========================================
   // BUSQUEDA Y FILTROS
-  // =========================
+  // ==========================================
 
   const productosFiltrados = productos.filter(
     (producto) => {
 
       const coincideNombre = producto.nombre
         .toLowerCase()
-        .includes(busqueda.toLowerCase());
+        .includes(
+          busqueda.toLowerCase()
+        );
 
       const coincideCategoria =
         categoriaSeleccionada === "Todas" ||
@@ -332,14 +370,16 @@ export default function App() {
     }
   );
 
-  // =========================
+  // ==========================================
   // INTERFAZ PRINCIPAL
-  // =========================
+  // ==========================================
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
 
-      {/* NAVBAR */}
+      {/* ==================================== */}
+      {/* BARRA DE NAVEGACION */}
+      {/* ==================================== */}
 
       {!esRutaAdmin && (
         <nav className="navbar navbar-expand-lg navbar-dark bg-success sticky-top shadow-sm d-print-none">
@@ -372,64 +412,114 @@ export default function App() {
 
               <div className="navbar-nav me-auto align-items-lg-center">
 
-                <Link className="nav-link" to="/">
+                <Link
+                  className="nav-link"
+                  to="/"
+                >
                   Inicio
                 </Link>
 
-                <Link className="nav-link" to="/productos">
+                <Link
+                  className="nav-link"
+                  to="/productos"
+                >
                   Productos
                 </Link>
 
-                <Link className="nav-link" to="/categorias">
+                <Link
+                  className="nav-link"
+                  to="/categorias"
+                >
                   Categorías
                 </Link>
 
-                <Link className="nav-link" to="/ofertas">
+                <Link
+                  className="nav-link"
+                  to="/ofertas"
+                >
                   Ofertas
                 </Link>
 
-                <Link className="nav-link" to="/blog">
+                <Link
+                  className="nav-link"
+                  to="/blog"
+                >
                   Blog
                 </Link>
 
-                <Link className="nav-link" to="/nosotros">
+                <Link
+                  className="nav-link"
+                  to="/nosotros"
+                >
                   Nosotros
                 </Link>
 
-                <Link className="nav-link" to="/contacto">
+                <Link
+                  className="nav-link"
+                  to="/contacto"
+                >
                   Contacto
                 </Link>
 
+                {/* USUARIO SIN SESION */}
+
                 {!usuarioActual ? (
                   <>
-                    <Link className="nav-link" to="/registro">
+                    <Link
+                      className="nav-link"
+                      to="/registro"
+                    >
                       Registro
                     </Link>
 
-                    <Link className="nav-link" to="/login">
+                    <Link
+                      className="nav-link"
+                      to="/login"
+                    >
                       Iniciar Sesión
                     </Link>
                   </>
                 ) : (
                   <>
+
+                    {/* USUARIO AUTENTICADO */}
+
                     <span className="nav-link text-white-50">
                       👤 {usuarioActual.nombre}
                     </span>
 
                     <button
+                      type="button"
                       className="btn btn-link nav-link"
                       onClick={handleLogout}
                     >
                       Cerrar sesión
                     </button>
+
+                    {/* NUEVO: HISTORIAL DE COMPRAS */}
+
+                    <Link
+                      className="nav-link"
+                      to="/mis-compras"
+                    >
+                      📦 Mis Compras
+                    </Link>
+
                   </>
                 )}
 
-                <Link className="nav-link" to="/carrito">
+                {/* CARRITO */}
+
+                <Link
+                  className="nav-link"
+                  to="/carrito"
+                >
                   🛒 ({carrito.length})
                 </Link>
 
               </div>
+
+              {/* BUSCADOR Y ADMINISTRACION */}
 
               <div className="d-flex flex-column flex-xl-row gap-2 my-2 my-lg-0">
 
@@ -445,6 +535,7 @@ export default function App() {
 
                 {usuarioActual?.rol === "admin" && (
                   <>
+
                     <Link
                       to="/admin"
                       className="btn btn-outline-light rounded-pill text-nowrap"
@@ -453,6 +544,7 @@ export default function App() {
                     </Link>
 
                     <button
+                      type="button"
                       className="btn btn-outline-light rounded-pill text-nowrap"
                       onClick={() => {
                         setModoAdmin(!modoAdmin);
@@ -460,7 +552,9 @@ export default function App() {
                         setProductoEditando(null);
                       }}
                     >
-                      {modoAdmin ? "Salir Admin" : "⚙️ Admin"}
+                      {modoAdmin
+                        ? "Salir Admin"
+                        : "⚙️ Admin"}
                     </button>
 
                     <Link
@@ -469,20 +563,31 @@ export default function App() {
                     >
                       👥 Usuarios
                     </Link>
+
                   </>
                 )}
 
               </div>
+
             </div>
           </div>
         </nav>
       )}
 
-      {/* RUTAS DE LA TIENDA */}
+      {/* ==================================== */}
+      {/* RUTAS DE LA APLICACION */}
+      {/* ==================================== */}
 
       <Routes>
 
-        <Route path="/" element={<Home />} />
+        {/* INICIO */}
+
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
+        {/* PRODUCTOS */}
 
         <Route
           path="/productos"
@@ -493,7 +598,9 @@ export default function App() {
               productosFiltrados={productosFiltrados}
               cargandoProductos={cargando}
               errorProductos={error}
-              recargarProductos={() => window.location.reload()}
+              recargarProductos={() =>
+                window.location.reload()
+              }
               categoriaSeleccionada={categoriaSeleccionada}
               setCategoriaSeleccionada={setCategoriaSeleccionada}
               onAddToCart={handleAddToCart}
@@ -504,6 +611,8 @@ export default function App() {
             />
           }
         />
+
+        {/* CATEGORIAS */}
 
         <Route
           path="/categorias"
@@ -527,6 +636,8 @@ export default function App() {
           }
         />
 
+        {/* OFERTAS */}
+
         <Route
           path="/ofertas"
           element={
@@ -536,6 +647,8 @@ export default function App() {
             />
           }
         />
+
+        {/* CARRITO */}
 
         <Route
           path="/carrito"
@@ -548,6 +661,8 @@ export default function App() {
             />
           }
         />
+
+        {/* CHECKOUT */}
 
         <Route
           path="/checkout"
@@ -562,6 +677,8 @@ export default function App() {
           }
         />
 
+        {/* RESULTADOS DE COMPRA */}
+
         <Route
           path="/compra-exitosa"
           element={<CompraExitosa />}
@@ -571,6 +688,8 @@ export default function App() {
           path="/compra-fallida"
           element={<CompraFallida />}
         />
+
+        {/* DETALLE DE PRODUCTO */}
 
         <Route
           path="/productos/:id"
@@ -582,19 +701,54 @@ export default function App() {
           }
         />
 
-        <Route path="/registro" element={<Registro />} />
+        {/* AUTENTICACION */}
 
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/registro"
+          element={<Registro />}
+        />
 
-        <Route path="/nosotros" element={<Nosotros />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <Route path="/contacto" element={<Contacto />} />
+        {/* ================================= */}
+        {/* NUEVA RUTA: MIS COMPRAS */}
+        {/* ================================= */}
 
-        <Route path="/blog" element={<Blog />} />
+        <Route
+          path="/mis-compras"
+          element={<MisCompras />}
+        />
 
-        <Route path="/blog/:id" element={<BlogDetail />} />
+        {/* INFORMACION DE LA TIENDA */}
 
+        <Route
+          path="/nosotros"
+          element={<Nosotros />}
+        />
+
+        <Route
+          path="/contacto"
+          element={<Contacto />}
+        />
+
+        {/* BLOG */}
+
+        <Route
+          path="/blog"
+          element={<Blog />}
+        />
+
+        <Route
+          path="/blog/:id"
+          element={<BlogDetail />}
+        />
+
+        {/* ================================= */}
         {/* PANEL ADMINISTRADOR */}
+        {/* ================================= */}
 
         <Route
           path="/admin"
@@ -608,6 +762,8 @@ export default function App() {
           }
         >
 
+          {/* DASHBOARD */}
+
           <Route
             index
             element={
@@ -619,15 +775,23 @@ export default function App() {
             }
           />
 
+          {/* ORDENES */}
+
           <Route
             path="ordenes"
-            element={<Ordenes ordenes={ordenes} />}
+            element={
+              <Ordenes ordenes={ordenes} />
+            }
           />
 
           <Route
             path="ordenes/:numero"
-            element={<BoletaAdmin ordenes={ordenes} />}
+            element={
+              <BoletaAdmin ordenes={ordenes} />
+            }
           />
+
+          {/* USUARIOS */}
 
           <Route
             path="usuarios"
@@ -658,6 +822,8 @@ export default function App() {
               />
             }
           />
+
+          {/* PRODUCTOS */}
 
           <Route
             path="productos"
@@ -693,12 +859,18 @@ export default function App() {
             }
           />
 
+          {/* PRODUCTOS CRITICOS */}
+
           <Route
             path="productos-criticos"
             element={
-              <ProductosCriticos productos={productos} />
+              <ProductosCriticos
+                productos={productos}
+              />
             }
           />
+
+          {/* CATEGORIAS */}
 
           <Route
             path="categorias"
@@ -717,29 +889,39 @@ export default function App() {
 
       </Routes>
 
-      {/* FORMULARIO ADMIN */}
+      {/* ==================================== */}
+      {/* FORMULARIO ADMINISTRATIVO */}
+      {/* ==================================== */}
 
       {mostrarFormulario && (
         <div
           id="formulario-admin"
           className="container my-4 flex-grow-1"
         >
+
           <div className="row justify-content-center">
+
             <div className="col-md-8">
+
               <ProductForm
                 onSave={handleSaveProduct}
                 productoEditando={productoEditando}
                 categorias={categorias}
               />
+
             </div>
           </div>
         </div>
       )}
 
+      {/* ==================================== */}
       {/* FOOTER */}
+      {/* ==================================== */}
 
       <footer className="bg-dark text-white py-4 mt-5 d-print-none">
+
         <div className="container text-center">
+
           <p className="m-0 fw-light">
             🌱 <strong>Huerto Hogar</strong> -
             Evaluación FullStack DSY1104 | Duoc UC
@@ -749,6 +931,7 @@ export default function App() {
             Desarrollado con React, Bootstrap,
             Jasmine y Karma
           </small>
+
         </div>
       </footer>
 
