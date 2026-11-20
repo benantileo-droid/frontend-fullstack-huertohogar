@@ -94,19 +94,16 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
 </head>
 
 <body id="HTMLReporter" class="html-reporter">
-<h1>Tested in Chrome Headless 157.0.0.0 (Windows 10) on Thu Nov 19 2026</h1>
+<h1>Tested in Chrome Headless 157.0.0.0 (Windows 10) on Fri Nov 20 2026</h1>
 
 <div class="alert">
 
 
-<!-- <span class="failingAlert bar">Failed 3 specs</span> -->
-<span class="failingAlert bar"><span class="fold-buttons"><a href="#" onclick="fold();">Fold</a> | 
-  <a href="#" onclick="unfold();">Unfold</a></span>14 specs, 3 failed, 0 pending</span>
-<span class="resultsMenu bar">
-<a class="summaryMenuItem" onclick="showSummary();" href="#">Spec List<a>|<a 
-   class="detailsMenuItem" onclick="showFailures();" href="#">Failures</a>
-</span>
 
+  
+  <span class="passingAlert bar"><span class="fold-buttons"><a href="#" onclick="fold();">Fold</a> | 
+  <a href="#" onclick="unfold();">Unfold</a></span>14 specs, 0 failed, 0 pending</span>
+  
 
 
 </div>
@@ -121,10 +118,6 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
       <span class="description">Pruebas de ProductForm</span>
     
       <div class="specSummary passed">
-      <span class="description">3. Debe cargar los datos cuando se edita un producto</span>
-      </div>
-    
-      <div class="specSummary passed">
       <span class="description">1. Debe mostrar el formulario de nuevo producto</span>
       </div>
     
@@ -132,13 +125,8 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
       <span class="description">2. Debe permitir escribir el nombre del producto</span>
       </div>
     
-    </div>
-  
-    <div class="suite failed">
-      <span class="description">Carrito - Interacciones</span>
-    
-      <div class="specSummary failed">
-      <span class="description">14. Debe ejecutar onDecrease con el ID del producto</span>
+      <div class="specSummary passed">
+      <span class="description">3. Debe cargar los datos cuando se edita un producto</span>
       </div>
     
     </div>
@@ -147,7 +135,11 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
       <span class="description">Pruebas de Carrito</span>
     
       <div class="specSummary passed">
-      <span class="description">8. Debe calcular correctamente el total del carrito</span>
+      <span class="description">9. Debe llamar a aumentar cantidad al presionar +</span>
+      </div>
+    
+      <div class="specSummary passed">
+      <span class="description">10. Debe llamar a eliminar con el ID del producto</span>
       </div>
     
       <div class="specSummary passed">
@@ -155,28 +147,33 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
       </div>
     
       <div class="specSummary passed">
-      <span class="description">10. Debe llamar a eliminar con el id del producto</span>
-      </div>
-    
-      <div class="specSummary passed">
-      <span class="description">9. Debe llamar a aumentar cantidad al presionar +</span>
+      <span class="description">8. Debe calcular correctamente el total del carrito</span>
       </div>
     
     </div>
   
-    <div class="suite failed">
+    <div class="suite passed">
       <span class="description">Pruebas de ProductCard</span>
     
-      <div class="specSummary failed">
+      <div class="specSummary passed">
       <span class="description">5. Debe agregar el producto al carrito al hacer clic</span>
-      </div>
-    
-      <div class="specSummary failed">
-      <span class="description">4. Debe mostrar el nombre y precio del producto</span>
       </div>
     
       <div class="specSummary passed">
       <span class="description">6. Debe mostrar Editar y Eliminar cuando está en modo Admin</span>
+      </div>
+    
+      <div class="specSummary passed">
+      <span class="description">4. Debe mostrar el nombre y precio del producto</span>
+      </div>
+    
+    </div>
+  
+    <div class="suite passed">
+      <span class="description">Carrito - Interacciones</span>
+    
+      <div class="specSummary passed">
+      <span class="description">14. Debe ejecutar onDecrease con el ID del producto</span>
       </div>
     
     </div>
@@ -185,15 +182,15 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
       <span class="description">ProductCard - Acciones administrativas</span>
     
       <div class="specSummary passed">
+      <span class="description">11. Debe ejecutar onEdit al presionar Editar</span>
+      </div>
+    
+      <div class="specSummary passed">
       <span class="description">12. Debe ejecutar onDelete al presionar Eliminar</span>
       </div>
     
       <div class="specSummary passed">
-      <span class="description">13. Debe ocultar Editar y Eliminar fuera del modo Admin</span>
-      </div>
-    
-      <div class="specSummary passed">
-      <span class="description">11. Debe ejecutar onEdit al presionar Editar</span>
+      <span class="description">13. Debe ocultar botones administrativos en modo cliente</span>
       </div>
     
     </div>
@@ -202,904 +199,6 @@ body { background-color: #eeeeee; padding: 0; margin: 5px; overflow-y: scroll; }
 </div>
 
 <div id="details">
-  
-  
-  <div class="specDetail failed">
-    <span class="description">Carrito - Interacciones 14. Debe ejecutar onDecrease con el ID del producto</span>
-    <div class="stackTrace">
-      <div class="resultMessage">TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name &quot;-&quot;
-
-Here are the accessible roles:
-
-  heading:
-
-  Name &quot;Mi Carrito 🛒&quot;:
-  &lt;h1
-    class=&quot;fw-bold text-success mb-4&quot;
-  /&gt;
-
-  Name &quot;Manzana Orgánica&quot;:
-  &lt;h5
-    class=&quot;fw-bold mb-1&quot;
-  /&gt;
-
-  Name &quot;Total: $2400&quot;:
-  &lt;h3
-    class=&quot;fw-bold&quot;
-  /&gt;
-
-  --------------------------------------------------
-  button:
-
-  Name &quot;−&quot;:
-  &lt;button
-    class=&quot;btn btn-outline-secondary btn-sm&quot;
-  /&gt;
-
-  Name &quot;+&quot;:
-  &lt;button
-    class=&quot;btn btn-outline-success btn-sm&quot;
-  /&gt;
-
-  Name &quot;Eliminar&quot;:
-  &lt;button
-    class=&quot;btn btn-outline-danger btn-sm ms-3&quot;
-  /&gt;
-
-  --------------------------------------------------
-  strong:
-
-  Name &quot;&quot;:
-  &lt;strong /&gt;
-
-  --------------------------------------------------
-  link:
-
-  Name &quot;Seguir comprando&quot;:
-  &lt;a
-    class=&quot;btn btn-outline-secondary rounded-pill px-4&quot;
-    data-discover=&quot;true&quot;
-    href=&quot;/productos&quot;
-  /&gt;
-
-  Name &quot;Ir a pagar&quot;:
-  &lt;a
-    class=&quot;btn btn-success rounded-pill px-4&quot;
-    data-discover=&quot;true&quot;
-    href=&quot;/checkout&quot;
-  /&gt;
-
-  --------------------------------------------------
-
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-
-
-  
-  
-  
-  
-  
-  
-  
-
-
-
-  &lt;div&gt;
-    &lt;div
-      class=&quot;container py-5&quot;
-    &gt;
-      &lt;h1
-        class=&quot;fw-bold text-success mb-4&quot;
-      &gt;
-        Mi Carrito 🛒
-      &lt;/h1&gt;
-      &lt;div&gt;
-        &lt;div
-          class=&quot;card border-0 shadow-sm mb-3&quot;
-        &gt;
-          &lt;div
-            class=&quot;card-body d-flex justify-content-between align-items-center&quot;
-          &gt;
-            &lt;div&gt;
-              &lt;h5
-                class=&quot;fw-bold mb-1&quot;
-              &gt;
-                Manzana Orgánica
-              &lt;/h5&gt;
-              &lt;div
-                class=&quot;d-flex align-items-center gap-2 mt-2&quot;
-              &gt;
-                &lt;span
-                  class=&quot;text-muted&quot;
-                &gt;
-                  Cantidad:
-                &lt;/span&gt;
-                &lt;button
-                  class=&quot;btn btn-outline-secondary btn-sm&quot;
-                &gt;
-                  −
-                &lt;/button&gt;
-                &lt;strong&gt;
-                  2
-                &lt;/strong&gt;
-                &lt;button
-                  class=&quot;btn btn-outline-success btn-sm&quot;
-                &gt;
-                  +
-                &lt;/button&gt;
-              &lt;/div&gt;
-            &lt;/div&gt;
-            &lt;div
-              class=&quot;d-flex align-items-center&quot;
-            &gt;
-              &lt;span
-                class=&quot;fw-bold text-success fs-5&quot;
-              &gt;
-                $
-                2400
-              &lt;/span&gt;
-              &lt;button
-                class=&quot;btn btn-outline-danger btn-sm ms-3&quot;
-              &gt;
-                Eliminar
-              &lt;/button&gt;
-            &lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div
-          class=&quot;text-end mt-4&quot;
-        &gt;
-          &lt;h3
-            class=&quot;fw-bold&quot;
-          &gt;
-            Total: $
-            2400
-          &lt;/h3&gt;
-          &lt;div
-            class=&quot;d-flex justify-content-end gap-2 mt-3&quot;
-          &gt;
-            &lt;a
-              class=&quot;btn btn-outline-secondary rounded-pill px-4&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/productos&quot;
-            &gt;
-              Seguir comprando
-            &lt;/a&gt;
-            &lt;a
-              class=&quot;btn btn-success rounded-pill px-4&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/checkout&quot;
-            &gt;
-              Ir a pagar
-            &lt;/a&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name &quot;-&quot;
-Here are the accessible roles:
-  heading:
-  Name &quot;Mi Carrito 🛒&quot;:
-  &lt;h1
-    class=&quot;fw-bold text-success mb-4&quot;
-  /&gt;
-  Name &quot;Manzana Orgánica&quot;:
-  &lt;h5
-    class=&quot;fw-bold mb-1&quot;
-  /&gt;
-  Name &quot;Total: $2400&quot;:
-  &lt;h3
-    class=&quot;fw-bold&quot;
-  /&gt;
-  --------------------------------------------------
-  button:
-  Name &quot;−&quot;:
-  &lt;button
-    class=&quot;btn btn-outline-secondary btn-sm&quot;
-  /&gt;
-  Name &quot;+&quot;:
-  &lt;button
-    class=&quot;btn btn-outline-success btn-sm&quot;
-  /&gt;
-  Name &quot;Eliminar&quot;:
-  &lt;button
-    class=&quot;btn btn-outline-danger btn-sm ms-3&quot;
-  /&gt;
-  --------------------------------------------------
-  strong:
-  Name &quot;&quot;:
-  &lt;strong /&gt;
-  --------------------------------------------------
-  link:
-  Name &quot;Seguir comprando&quot;:
-  &lt;a
-    class=&quot;btn btn-outline-secondary rounded-pill px-4&quot;
-    data-discover=&quot;true&quot;
-    href=&quot;/productos&quot;
-  /&gt;
-  Name &quot;Ir a pagar&quot;:
-  &lt;a
-    class=&quot;btn btn-success rounded-pill px-4&quot;
-    data-discover=&quot;true&quot;
-    href=&quot;/checkout&quot;
-  /&gt;
-  --------------------------------------------------
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  &lt;div&gt;
-    &lt;div
-      class=&quot;container py-5&quot;
-    &gt;
-      &lt;h1
-        class=&quot;fw-bold text-success mb-4&quot;
-      &gt;
-        Mi Carrito 🛒
-      &lt;/h1&gt;
-      &lt;div&gt;
-        &lt;div
-          class=&quot;card border-0 shadow-sm mb-3&quot;
-        &gt;
-          &lt;div
-            class=&quot;card-body d-flex justify-content-between align-items-center&quot;
-          &gt;
-            &lt;div&gt;
-              &lt;h5
-                class=&quot;fw-bold mb-1&quot;
-              &gt;
-                Manzana Orgánica
-              &lt;/h5&gt;
-              &lt;div
-                class=&quot;d-flex align-items-center gap-2 mt-2&quot;
-              &gt;
-                &lt;span
-                  class=&quot;text-muted&quot;
-                &gt;
-                  Cantidad:
-                &lt;/span&gt;
-                &lt;button
-                  class=&quot;btn btn-outline-secondary btn-sm&quot;
-                &gt;
-                  −
-                &lt;/button&gt;
-                &lt;strong&gt;
-                  2
-                &lt;/strong&gt;
-                &lt;button
-                  class=&quot;btn btn-outline-success btn-sm&quot;
-                &gt;
-                  +
-                &lt;/button&gt;
-              &lt;/div&gt;
-            &lt;/div&gt;
-            &lt;div
-              class=&quot;d-flex align-items-center&quot;
-            &gt;
-              &lt;span
-                class=&quot;fw-bold text-success fs-5&quot;
-              &gt;
-                $
-                2400
-              &lt;/span&gt;
-              &lt;button
-                class=&quot;btn btn-outline-danger btn-sm ms-3&quot;
-              &gt;
-                Eliminar
-              &lt;/button&gt;
-            &lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div
-          class=&quot;text-end mt-4&quot;
-        &gt;
-          &lt;h3
-            class=&quot;fw-bold&quot;
-          &gt;
-            Total: $
-            2400
-          &lt;/h3&gt;
-          &lt;div
-            class=&quot;d-flex justify-content-end gap-2 mt-3&quot;
-          &gt;
-            &lt;a
-              class=&quot;btn btn-outline-secondary rounded-pill px-4&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/productos&quot;
-            &gt;
-              Seguir comprando
-            &lt;/a&gt;
-            &lt;a
-              class=&quot;btn btn-success rounded-pill px-4&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/checkout&quot;
-            &gt;
-              Ir a pagar
-            &lt;/a&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-    at Object.getElementError (http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34050:21)
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34681:27
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34663:19
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34700:21
-    at UserContext.&lt;anonymous&gt; (http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:39499:30)
-    at &lt;Jasmine&gt;</div>
-    </div>
-  </div>
-  
-  
-  
-  <div class="specDetail failed">
-    <span class="description">Pruebas de ProductCard 5. Debe agregar el producto al carrito al hacer clic</span>
-    <div class="stackTrace">
-      <div class="resultMessage">TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/Agregar/i`
-
-Here are the accessible roles:
-
-  img:
-
-  Name &quot;Manzana Orgánica&quot;:
-  &lt;img
-    alt=&quot;Manzana Orgánica&quot;
-    class=&quot;card-img-top&quot;
-    src=&quot;https://via.placeholder.com/300&quot;
-    style=&quot;height: 200px; object-fit: cover;&quot;
-  /&gt;
-
-  --------------------------------------------------
-  heading:
-
-  Name &quot;Manzana Orgánica&quot;:
-  &lt;h5
-    class=&quot;card-title fw-bold text-dark mb-1&quot;
-  /&gt;
-
-  --------------------------------------------------
-  paragraph:
-
-  Name &quot;&quot;:
-  &lt;p
-    class=&quot;card-text text-muted small mb-3&quot;
-  /&gt;
-
-  --------------------------------------------------
-  button:
-
-  Name &quot;No disponible&quot;:
-  &lt;button
-    class=&quot;btn btn-success btn-sm&quot;
-    disabled=&quot;&quot;
-    type=&quot;button&quot;
-  /&gt;
-
-  --------------------------------------------------
-  link:
-
-  Name &quot;Ver detalle&quot;:
-  &lt;a
-    class=&quot;btn btn-outline-success btn-sm&quot;
-    data-discover=&quot;true&quot;
-    href=&quot;/productos/1&quot;
-  /&gt;
-
-  --------------------------------------------------
-
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-
-
-  
-  
-  
-  
-  
-  
-  
-
-
-
-  &lt;div&gt;
-    &lt;div
-      class=&quot;col-12 col-sm-6 col-md-6 col-lg-6 mb-4&quot;
-    &gt;
-      &lt;div
-        class=&quot;card h-100 border-0 shadow-sm rounded-3 overflow-hidden&quot;
-      &gt;
-        &lt;div
-          class=&quot;position-relative&quot;
-        &gt;
-          &lt;img
-            alt=&quot;Manzana Orgánica&quot;
-            class=&quot;card-img-top&quot;
-            src=&quot;https://via.placeholder.com/300&quot;
-            style=&quot;height: 200px; object-fit: cover;&quot;
-          /&gt;
-          &lt;span
-            class=&quot;position-absolute top-0 start-0 bg-success text-white badge m-2 px-3 py-2 rounded-pill&quot;
-          &gt;
-            Frutas
-          &lt;/span&gt;
-        &lt;/div&gt;
-        &lt;div
-          class=&quot;card-body d-flex flex-column p-4&quot;
-        &gt;
-          &lt;h5
-            class=&quot;card-title fw-bold text-dark mb-1&quot;
-          &gt;
-            Manzana Orgánica
-          &lt;/h5&gt;
-          &lt;p
-            class=&quot;card-text text-muted small mb-3&quot;
-          &gt;
-            Manzana fresca
-          &lt;/p&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;badge bg-secondary&quot;
-            &gt;
-              Stock no disponible
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;fs-4 fw-bold text-success&quot;
-            &gt;
-              $
-              1.200
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;d-flex flex-wrap gap-2 mt-auto&quot;
-          &gt;
-            &lt;button
-              class=&quot;btn btn-success btn-sm&quot;
-              disabled=&quot;&quot;
-              type=&quot;button&quot;
-            &gt;
-              No disponible
-            &lt;/button&gt;
-            &lt;a
-              class=&quot;btn btn-outline-success btn-sm&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/productos/1&quot;
-            &gt;
-              Ver detalle
-            &lt;/a&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/Agregar/i`
-Here are the accessible roles:
-  img:
-  Name &quot;Manzana Orgánica&quot;:
-  &lt;img
-    alt=&quot;Manzana Orgánica&quot;
-    class=&quot;card-img-top&quot;
-    src=&quot;https://via.placeholder.com/300&quot;
-    style=&quot;height: 200px; object-fit: cover;&quot;
-  /&gt;
-  --------------------------------------------------
-  heading:
-  Name &quot;Manzana Orgánica&quot;:
-  &lt;h5
-    class=&quot;card-title fw-bold text-dark mb-1&quot;
-  /&gt;
-  --------------------------------------------------
-  paragraph:
-  Name &quot;&quot;:
-  &lt;p
-    class=&quot;card-text text-muted small mb-3&quot;
-  /&gt;
-  --------------------------------------------------
-  button:
-  Name &quot;No disponible&quot;:
-  &lt;button
-    class=&quot;btn btn-success btn-sm&quot;
-    disabled=&quot;&quot;
-    type=&quot;button&quot;
-  /&gt;
-  --------------------------------------------------
-  link:
-  Name &quot;Ver detalle&quot;:
-  &lt;a
-    class=&quot;btn btn-outline-success btn-sm&quot;
-    data-discover=&quot;true&quot;
-    href=&quot;/productos/1&quot;
-  /&gt;
-  --------------------------------------------------
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  &lt;div&gt;
-    &lt;div
-      class=&quot;col-12 col-sm-6 col-md-6 col-lg-6 mb-4&quot;
-    &gt;
-      &lt;div
-        class=&quot;card h-100 border-0 shadow-sm rounded-3 overflow-hidden&quot;
-      &gt;
-        &lt;div
-          class=&quot;position-relative&quot;
-        &gt;
-          &lt;img
-            alt=&quot;Manzana Orgánica&quot;
-            class=&quot;card-img-top&quot;
-            src=&quot;https://via.placeholder.com/300&quot;
-            style=&quot;height: 200px; object-fit: cover;&quot;
-          /&gt;
-          &lt;span
-            class=&quot;position-absolute top-0 start-0 bg-success text-white badge m-2 px-3 py-2 rounded-pill&quot;
-          &gt;
-            Frutas
-          &lt;/span&gt;
-        &lt;/div&gt;
-        &lt;div
-          class=&quot;card-body d-flex flex-column p-4&quot;
-        &gt;
-          &lt;h5
-            class=&quot;card-title fw-bold text-dark mb-1&quot;
-          &gt;
-            Manzana Orgánica
-          &lt;/h5&gt;
-          &lt;p
-            class=&quot;card-text text-muted small mb-3&quot;
-          &gt;
-            Manzana fresca
-          &lt;/p&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;badge bg-secondary&quot;
-            &gt;
-              Stock no disponible
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;fs-4 fw-bold text-success&quot;
-            &gt;
-              $
-              1.200
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;d-flex flex-wrap gap-2 mt-auto&quot;
-          &gt;
-            &lt;button
-              class=&quot;btn btn-success btn-sm&quot;
-              disabled=&quot;&quot;
-              type=&quot;button&quot;
-            &gt;
-              No disponible
-            &lt;/button&gt;
-            &lt;a
-              class=&quot;btn btn-outline-success btn-sm&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/productos/1&quot;
-            &gt;
-              Ver detalle
-            &lt;/a&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-    at Object.getElementError (http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34050:21)
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34681:27
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34663:19
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34700:21
-    at UserContext.&lt;anonymous&gt; (http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:39735:28)
-    at &lt;Jasmine&gt;</div>
-    </div>
-  </div>
-  
-  <div class="specDetail failed">
-    <span class="description">Pruebas de ProductCard 4. Debe mostrar el nombre y precio del producto</span>
-    <div class="stackTrace">
-      <div class="resultMessage">TestingLibraryElementError: Unable to find an element with the text: $1200. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
-
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-
-
-  
-  
-  
-  
-  
-  
-  
-
-
-
-  &lt;div&gt;
-    &lt;div
-      class=&quot;col-12 col-sm-6 col-md-6 col-lg-6 mb-4&quot;
-    &gt;
-      &lt;div
-        class=&quot;card h-100 border-0 shadow-sm rounded-3 overflow-hidden&quot;
-      &gt;
-        &lt;div
-          class=&quot;position-relative&quot;
-        &gt;
-          &lt;img
-            alt=&quot;Manzana Orgánica&quot;
-            class=&quot;card-img-top&quot;
-            src=&quot;https://via.placeholder.com/300&quot;
-            style=&quot;height: 200px; object-fit: cover;&quot;
-          /&gt;
-          &lt;span
-            class=&quot;position-absolute top-0 start-0 bg-success text-white badge m-2 px-3 py-2 rounded-pill&quot;
-          &gt;
-            Frutas
-          &lt;/span&gt;
-        &lt;/div&gt;
-        &lt;div
-          class=&quot;card-body d-flex flex-column p-4&quot;
-        &gt;
-          &lt;h5
-            class=&quot;card-title fw-bold text-dark mb-1&quot;
-          &gt;
-            Manzana Orgánica
-          &lt;/h5&gt;
-          &lt;p
-            class=&quot;card-text text-muted small mb-3&quot;
-          &gt;
-            Manzana fresca
-          &lt;/p&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;badge bg-secondary&quot;
-            &gt;
-              Stock no disponible
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;fs-4 fw-bold text-success&quot;
-            &gt;
-              $
-              1.200
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;d-flex flex-wrap gap-2 mt-auto&quot;
-          &gt;
-            &lt;button
-              class=&quot;btn btn-success btn-sm&quot;
-              disabled=&quot;&quot;
-              type=&quot;button&quot;
-            &gt;
-              No disponible
-            &lt;/button&gt;
-            &lt;a
-              class=&quot;btn btn-outline-success btn-sm&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/productos/1&quot;
-            &gt;
-              Ver detalle
-            &lt;/a&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-TestingLibraryElementError: Unable to find an element with the text: $1200. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
-Ignored nodes: comments, script, style
-&lt;body&gt;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  &lt;div&gt;
-    &lt;div
-      class=&quot;col-12 col-sm-6 col-md-6 col-lg-6 mb-4&quot;
-    &gt;
-      &lt;div
-        class=&quot;card h-100 border-0 shadow-sm rounded-3 overflow-hidden&quot;
-      &gt;
-        &lt;div
-          class=&quot;position-relative&quot;
-        &gt;
-          &lt;img
-            alt=&quot;Manzana Orgánica&quot;
-            class=&quot;card-img-top&quot;
-            src=&quot;https://via.placeholder.com/300&quot;
-            style=&quot;height: 200px; object-fit: cover;&quot;
-          /&gt;
-          &lt;span
-            class=&quot;position-absolute top-0 start-0 bg-success text-white badge m-2 px-3 py-2 rounded-pill&quot;
-          &gt;
-            Frutas
-          &lt;/span&gt;
-        &lt;/div&gt;
-        &lt;div
-          class=&quot;card-body d-flex flex-column p-4&quot;
-        &gt;
-          &lt;h5
-            class=&quot;card-title fw-bold text-dark mb-1&quot;
-          &gt;
-            Manzana Orgánica
-          &lt;/h5&gt;
-          &lt;p
-            class=&quot;card-text text-muted small mb-3&quot;
-          &gt;
-            Manzana fresca
-          &lt;/p&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;badge bg-secondary&quot;
-            &gt;
-              Stock no disponible
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;mb-3&quot;
-          &gt;
-            &lt;span
-              class=&quot;fs-4 fw-bold text-success&quot;
-            &gt;
-              $
-              1.200
-            &lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div
-            class=&quot;d-flex flex-wrap gap-2 mt-auto&quot;
-          &gt;
-            &lt;button
-              class=&quot;btn btn-success btn-sm&quot;
-              disabled=&quot;&quot;
-              type=&quot;button&quot;
-            &gt;
-              No disponible
-            &lt;/button&gt;
-            &lt;a
-              class=&quot;btn btn-outline-success btn-sm&quot;
-              data-discover=&quot;true&quot;
-              href=&quot;/productos/1&quot;
-            &gt;
-              Ver detalle
-            &lt;/a&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-    at Object.getElementError (http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34050:21)
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34681:27
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34663:19
-    at http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:34700:21
-    at UserContext.&lt;anonymous&gt; (http://localhost:9876/absoluteC:/Users/Benja/AppData/Local/Temp/05df9c9640c6b1e607c1788a7ce67482-bundle.js?da39a3ee5e6b4b0d3255bfef95601890afd80709:39720:9)
-    at &lt;Jasmine&gt;</div>
-    </div>
-  </div>
-  
   
 </div>
 
@@ -1112,7 +211,7 @@ document.body.onkeypress = function (e) {
   switch (e.keyCode) {
     case 102: toggleFold(); break;
     case 49: showSummary(); break;
-    case 50: showFailures(); break;case 50: showFailures(); break;
+    
   }
 };
 

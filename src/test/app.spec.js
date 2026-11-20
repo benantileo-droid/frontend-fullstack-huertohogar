@@ -1,31 +1,45 @@
-import React from 'react';
+
+import React from "react";
+
 import {
   render,
   fireEvent,
-  cleanup
-} from '@testing-library/react';
+  cleanup,
+} from "@testing-library/react";
 
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from "react-router-dom";
 
-import ProductForm from '../pages/admin/ProductForm.jsx';
-import ProductCard from '../components/ProductCard.jsx';
-import Carrito from '../pages/Carrito.jsx';
+import ProductForm from "../pages/admin/ProductForm.jsx";
+import ProductCard from "../components/ProductCard.jsx";
+import Carrito from "../pages/Carrito.jsx";
 
+// ==========================================
+// DATOS PARA LAS PRUEBAS
+// ==========================================
 
-// ======================================================
+const productoPrueba = {
+  id: 1,
+  nombre: "Manzana Orgánica",
+  precio: 1200,
+  stock: 10,
+  categoria: "Frutas",
+  descripcion: "Manzana fresca",
+  imagen: "https://via.placeholder.com/300",
+};
+
+afterEach(() => {
+  cleanup();
+});
+
+// ==========================================
 // 1. PRODUCT FORM
-// ======================================================
+// ==========================================
 
-describe('Pruebas de ProductForm', () => {
+describe("Pruebas de ProductForm", () => {
 
-  afterEach(() => {
-    cleanup();
-  });
+  it("1. Debe mostrar el formulario de nuevo producto", () => {
 
-
-  it('1. Debe mostrar el formulario de nuevo producto', () => {
-
-    const onSave = jasmine.createSpy('onSave');
+    const onSave = jasmine.createSpy("onSave");
 
     const { getByText } = render(
       <ProductForm
@@ -40,10 +54,9 @@ describe('Pruebas de ProductForm', () => {
 
   });
 
+  it("2. Debe permitir escribir el nombre del producto", () => {
 
-  it('2. Debe permitir escribir el nombre del producto', () => {
-
-    const onSave = jasmine.createSpy('onSave');
+    const onSave = jasmine.createSpy("onSave");
 
     const { getByLabelText } = render(
       <ProductForm
@@ -52,204 +65,154 @@ describe('Pruebas de ProductForm', () => {
       />
     );
 
-    const inputNombre =
-      getByLabelText(/Nombre del producto/i);
+    const inputNombre = getByLabelText(
+      /Nombre del producto/i
+    );
 
     fireEvent.change(inputNombre, {
       target: {
-        value: 'Tomate Orgánico'
-      }
+        value: "Tomate Orgánico",
+      },
     });
 
-    expect(
-      inputNombre.value
-    ).toBe('Tomate Orgánico');
+    expect(inputNombre.value).toBe(
+      "Tomate Orgánico"
+    );
 
   });
 
+  it("3. Debe cargar los datos cuando se edita un producto", () => {
 
-  it('3. Debe cargar los datos cuando se edita un producto', () => {
-
-    const onSave = jasmine.createSpy('onSave');
-
-    const producto = {
-      id: 1,
-      nombre: 'Manzana Orgánica',
-      precio: 1200,
-      categoria: 'Frutas',
-      descripcion: 'Manzana fresca',
-      imagen: 'https://via.placeholder.com/300'
-    };
+    const onSave = jasmine.createSpy("onSave");
 
     const { getByLabelText } = render(
       <ProductForm
         onSave={onSave}
-        productoEditando={producto}
+        productoEditando={productoPrueba}
       />
     );
 
     expect(
       getByLabelText(/Nombre del producto/i).value
-    ).toBe('Manzana Orgánica');
+    ).toBe("Manzana Orgánica");
 
     expect(
       getByLabelText(/Precio/i).value
-    ).toBe('1200');
+    ).toBe("1200");
 
   });
 
 });
 
-
-// ======================================================
+// ==========================================
 // 2. PRODUCT CARD
-// ======================================================
+// ==========================================
 
-describe('Pruebas de ProductCard', () => {
+describe("Pruebas de ProductCard", () => {
 
-  afterEach(() => {
-    cleanup();
-  });
-
-
-  const producto = {
-    id: 1,
-    nombre: 'Manzana Orgánica',
-    precio: 1200,
-    categoria: 'Frutas',
-    descripcion: 'Manzana fresca',
-    imagen: 'https://via.placeholder.com/300'
-  };
-
-
-  it('4. Debe mostrar el nombre y precio del producto', () => {
+  it("4. Debe mostrar el nombre y precio del producto", () => {
 
     const onAddToCart =
-      jasmine.createSpy('onAddToCart');
+      jasmine.createSpy("onAddToCart");
 
     const { getByText } = render(
       <MemoryRouter>
-
         <ProductCard
-          product={producto}
+          product={productoPrueba}
           onAddToCart={onAddToCart}
           modoAdmin={false}
         />
-
       </MemoryRouter>
     );
 
     expect(
-      getByText('Manzana Orgánica')
+      getByText("Manzana Orgánica")
     ).toBeTruthy();
 
+    // React muestra precios con formato chileno.
     expect(
-      getByText('$1200')
+      getByText("$1.200")
     ).toBeTruthy();
 
   });
 
-
-  it('5. Debe agregar el producto al carrito al hacer clic', () => {
+  it("5. Debe agregar el producto al carrito al hacer clic", () => {
 
     const onAddToCart =
-      jasmine.createSpy('onAddToCart');
+      jasmine.createSpy("onAddToCart");
 
     const { getByRole } = render(
       <MemoryRouter>
-
         <ProductCard
-          product={producto}
+          product={productoPrueba}
           onAddToCart={onAddToCart}
           modoAdmin={false}
         />
-
       </MemoryRouter>
     );
 
     const botonAgregar = getByRole(
-      'button',
+      "button",
       {
-        name: /Agregar/i
+        name: /Agregar/i,
       }
     );
+
+    // Tenemos stock: 10 en productoPrueba.
+    expect(botonAgregar.disabled).toBe(false);
 
     fireEvent.click(botonAgregar);
 
     expect(
       onAddToCart
-    ).toHaveBeenCalledWith(producto);
+    ).toHaveBeenCalledWith(productoPrueba);
 
   });
 
+  it("6. Debe mostrar Editar y Eliminar cuando está en modo Admin", () => {
 
-  it('6. Debe mostrar Editar y Eliminar cuando está en modo Admin', () => {
-
-    const onEdit =
-      jasmine.createSpy('onEdit');
-
-    const onDelete =
-      jasmine.createSpy('onDelete');
+    const onEdit = jasmine.createSpy("onEdit");
+    const onDelete = jasmine.createSpy("onDelete");
 
     const { getByRole } = render(
       <MemoryRouter>
-
         <ProductCard
-          product={producto}
+          product={productoPrueba}
           onEdit={onEdit}
           onDelete={onDelete}
           modoAdmin={true}
         />
-
       </MemoryRouter>
     );
 
     expect(
-      getByRole(
-        'button',
-        {
-          name: /Editar/i
-        }
-      )
+      getByRole("button", { name: /Editar/i })
     ).toBeTruthy();
 
     expect(
-      getByRole(
-        'button',
-        {
-          name: /Eliminar/i
-        }
-      )
+      getByRole("button", { name: /Eliminar/i })
     ).toBeTruthy();
 
   });
 
 });
 
-
-// ======================================================
+// ==========================================
 // 3. CARRITO
-// ======================================================
+// ==========================================
 
-describe('Pruebas de Carrito', () => {
+describe("Pruebas de Carrito", () => {
 
-  afterEach(() => {
-    cleanup();
-  });
-
-
-  it('7. Debe mostrar mensaje cuando el carrito está vacío', () => {
+  it("7. Debe mostrar mensaje cuando el carrito está vacío", () => {
 
     const { getByText } = render(
       <MemoryRouter>
-
         <Carrito
           carrito={[]}
           onRemove={() => {}}
           onIncrease={() => {}}
           onDecrease={() => {}}
         />
-
       </MemoryRouter>
     );
 
@@ -259,79 +222,68 @@ describe('Pruebas de Carrito', () => {
 
   });
 
-
-  it('8. Debe calcular correctamente el total del carrito', () => {
+  it("8. Debe calcular correctamente el total del carrito", () => {
 
     const carrito = [
       {
         id: 1,
-        nombre: 'Manzana',
+        nombre: "Manzana",
         precio: 1000,
-        cantidad: 2
+        cantidad: 2,
       },
       {
         id: 2,
-        nombre: 'Naranja',
+        nombre: "Naranja",
         precio: 1500,
-        cantidad: 1
-      }
+        cantidad: 1,
+      },
     ];
 
     const { getByText } = render(
       <MemoryRouter>
-
         <Carrito
           carrito={carrito}
           onRemove={() => {}}
           onIncrease={() => {}}
           onDecrease={() => {}}
         />
-
       </MemoryRouter>
     );
 
     expect(
-      getByText('Total: $3500')
+      getByText("Total: $3500")
     ).toBeTruthy();
 
   });
 
-
-  it('9. Debe llamar a aumentar cantidad al presionar +', () => {
+  it("9. Debe llamar a aumentar cantidad al presionar +", () => {
 
     const onIncrease =
-      jasmine.createSpy('onIncrease');
+      jasmine.createSpy("onIncrease");
 
     const carrito = [
       {
         id: 1,
-        nombre: 'Manzana',
+        nombre: "Manzana",
         precio: 1000,
-        cantidad: 1
-      }
+        cantidad: 1,
+      },
     ];
 
     const { getByRole } = render(
       <MemoryRouter>
-
         <Carrito
           carrito={carrito}
           onRemove={() => {}}
           onIncrease={onIncrease}
           onDecrease={() => {}}
         />
-
       </MemoryRouter>
     );
 
-    const botonAumentar = getByRole(
-      'button',
-      {
-        name: '+'
-      }
+    fireEvent.click(
+      getByRole("button", { name: "+" })
     );
-
-    fireEvent.click(botonAumentar);
 
     expect(
       onIncrease
@@ -339,42 +291,34 @@ describe('Pruebas de Carrito', () => {
 
   });
 
-
-  it('10. Debe llamar a eliminar con el id del producto', () => {
+  it("10. Debe llamar a eliminar con el ID del producto", () => {
 
     const onRemove =
-      jasmine.createSpy('onRemove');
+      jasmine.createSpy("onRemove");
 
     const carrito = [
       {
         id: 1,
-        nombre: 'Manzana',
+        nombre: "Manzana",
         precio: 1000,
-        cantidad: 1
-      }
+        cantidad: 1,
+      },
     ];
 
     const { getByRole } = render(
       <MemoryRouter>
-
         <Carrito
           carrito={carrito}
           onRemove={onRemove}
           onIncrease={() => {}}
           onDecrease={() => {}}
         />
-
       </MemoryRouter>
     );
 
-    const botonEliminar = getByRole(
-      'button',
-      {
-        name: /Eliminar/i
-      }
+    fireEvent.click(
+      getByRole("button", { name: /Eliminar/i })
     );
-
-    fireEvent.click(botonEliminar);
 
     expect(
       onRemove

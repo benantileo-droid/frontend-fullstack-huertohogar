@@ -20,21 +20,18 @@ const productoPrueba = {
   id: 1,
   nombre: "Manzana Orgánica",
   precio: 1200,
+  stock: 10,
   categoria: "Frutas",
   descripcion: "Manzana fresca",
   imagen: "https://via.placeholder.com/300",
 };
-
-// ==========================================
-// LIMPIAR EL DOM DESPUES DE CADA PRUEBA
-// ==========================================
 
 afterEach(() => {
   cleanup();
 });
 
 // ==========================================
-// PRODUCT CARD - INTERACCIONES ADMIN
+// PRODUCT CARD - ADMINISTRACION
 // ==========================================
 
 describe("ProductCard - Acciones administrativas", () => {
@@ -46,13 +43,10 @@ describe("ProductCard - Acciones administrativas", () => {
   it("11. Debe ejecutar onEdit al presionar Editar", () => {
 
     const onEdit = jasmine.createSpy("onEdit");
-
     const onDelete = jasmine.createSpy("onDelete");
 
     const { getByRole } = render(
-
       <MemoryRouter>
-
         <ProductCard
           product={productoPrueba}
           onAddToCart={() => {}}
@@ -60,23 +54,22 @@ describe("ProductCard - Acciones administrativas", () => {
           onDelete={onDelete}
           modoAdmin={true}
         />
-
       </MemoryRouter>
-
     );
 
-    const botonEditar = getByRole(
-      "button",
-      {
+    fireEvent.click(
+      getByRole("button", {
         name: /Editar/i,
-      }
+      })
     );
 
-    fireEvent.click(botonEditar);
+    expect(
+      onEdit
+    ).toHaveBeenCalledWith(productoPrueba);
 
-    expect(onEdit).toHaveBeenCalled();
-
-    expect(onDelete).not.toHaveBeenCalled();
+    expect(
+      onDelete
+    ).not.toHaveBeenCalled();
 
   });
 
@@ -87,13 +80,10 @@ describe("ProductCard - Acciones administrativas", () => {
   it("12. Debe ejecutar onDelete al presionar Eliminar", () => {
 
     const onEdit = jasmine.createSpy("onEdit");
-
     const onDelete = jasmine.createSpy("onDelete");
 
     const { getByRole } = render(
-
       <MemoryRouter>
-
         <ProductCard
           product={productoPrueba}
           onAddToCart={() => {}}
@@ -101,23 +91,23 @@ describe("ProductCard - Acciones administrativas", () => {
           onDelete={onDelete}
           modoAdmin={true}
         />
-
       </MemoryRouter>
-
     );
 
-    const botonEliminar = getByRole(
-      "button",
-      {
+    fireEvent.click(
+      getByRole("button", {
         name: /Eliminar/i,
-      }
+      })
     );
 
-    fireEvent.click(botonEliminar);
+    // ProductCard envía el ID, no el objeto.
+    expect(
+      onDelete
+    ).toHaveBeenCalledWith(1);
 
-    expect(onDelete).toHaveBeenCalled();
-
-    expect(onEdit).not.toHaveBeenCalled();
+    expect(
+      onEdit
+    ).not.toHaveBeenCalled();
 
   });
 
@@ -125,12 +115,10 @@ describe("ProductCard - Acciones administrativas", () => {
   // PRUEBA 13
   // ========================================
 
-  it("13. Debe ocultar Editar y Eliminar fuera del modo Admin", () => {
+  it("13. Debe ocultar botones administrativos en modo cliente", () => {
 
     const { queryByRole } = render(
-
       <MemoryRouter>
-
         <ProductCard
           product={productoPrueba}
           onAddToCart={() => {}}
@@ -138,28 +126,20 @@ describe("ProductCard - Acciones administrativas", () => {
           onDelete={() => {}}
           modoAdmin={false}
         />
-
       </MemoryRouter>
-
     );
 
-    const botonEditar = queryByRole(
-      "button",
-      {
+    expect(
+      queryByRole("button", {
         name: /Editar/i,
-      }
-    );
+      })
+    ).toBeNull();
 
-    const botonEliminar = queryByRole(
-      "button",
-      {
+    expect(
+      queryByRole("button", {
         name: /Eliminar/i,
-      }
-    );
-
-    expect(botonEditar).toBeNull();
-
-    expect(botonEliminar).toBeNull();
+      })
+    ).toBeNull();
 
   });
 
@@ -193,32 +173,34 @@ describe("Carrito - Interacciones", () => {
     ];
 
     const { getByRole } = render(
-
       <MemoryRouter>
-
         <Carrito
           carrito={carritoPrueba}
           onRemove={() => {}}
           onIncrease={onIncrease}
           onDecrease={onDecrease}
         />
-
       </MemoryRouter>
-
     );
 
+    // Signo matemático de resta: −
+    // Debe coincidir con Carrito.jsx.
     const botonDisminuir = getByRole(
       "button",
       {
-        name: "-",
+        name: "−",
       }
     );
 
     fireEvent.click(botonDisminuir);
 
-    expect(onDecrease).toHaveBeenCalledWith(1);
+    expect(
+      onDecrease
+    ).toHaveBeenCalledWith(1);
 
-    expect(onIncrease).not.toHaveBeenCalled();
+    expect(
+      onIncrease
+    ).not.toHaveBeenCalled();
 
   });
 
