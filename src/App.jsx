@@ -23,13 +23,6 @@ import { useCarrito } from "./context/CarritoContext";
 import api from "./services/api";
 
 // ==========================================
-// DATOS ANTIGUOS PENDIENTES DE MIGRAR
-// SOLO EL DETALLE DE ORDENES
-// ==========================================
-
-import { getOrdenes } from "./data/db";
-
-// ==========================================
 // PAGINAS DE LA TIENDA
 // ==========================================
 
@@ -68,7 +61,7 @@ import AdminCategorias from "./pages/admin/AdminCategorias";
 export default function App() {
 
   // ==========================================
-  // PRODUCTOS DESDE MYSQL
+  // PRODUCTOS - MYSQL
   // ==========================================
 
   const {
@@ -79,7 +72,7 @@ export default function App() {
   } = useProductosApi();
 
   // ==========================================
-  // CATEGORIAS DESDE MYSQL
+  // CATEGORIAS - MYSQL
   // ==========================================
 
   const {
@@ -127,14 +120,7 @@ export default function App() {
   const eliminandoProductoRef = useRef(false);
 
   // ==========================================
-  // DETALLE ANTIGUO DE ORDENES
-  // PENDIENTE DE MIGRAR
-  // ==========================================
-
-  const [ordenes] = useState(getOrdenes);
-
-  // ==========================================
-  // NAVEGACION
+  // NAVEGACION Y ROLES
   // ==========================================
 
   const navigate = useNavigate();
@@ -249,8 +235,7 @@ export default function App() {
         String(item.id) === String(id)
     );
 
-    const nombre =
-      producto?.nombre ?? `#${id}`;
+    const nombre = producto?.nombre ?? `#${id}`;
 
     const confirmar = window.confirm(
       `¿Seguro que deseas eliminar "${nombre}"?\n\n` +
@@ -478,8 +463,6 @@ export default function App() {
 
                   <>
 
-                    {/* USUARIO AUTENTICADO */}
-
                     <span className="nav-link text-white-50">
                       👤 {usuarioActual.nombre}
                     </span>
@@ -491,8 +474,6 @@ export default function App() {
                     >
                       Cerrar sesión
                     </button>
-
-                    {/* HISTORIAL DE COMPRAS */}
 
                     {(
                       usuarioActual.rol === "cliente" ||
@@ -533,7 +514,7 @@ export default function App() {
 
               </div>
 
-              {/* BUSCADOR Y ADMINISTRACION */}
+              {/* BUSQUEDA Y ADMINISTRACION */}
 
               <div className="d-flex flex-column flex-xl-row gap-2 my-2 my-lg-0">
 
@@ -614,9 +595,11 @@ export default function App() {
               {errorCategorias && (
 
                 <div className="container mt-3">
+
                   <div className="alert alert-warning mb-0">
                     {errorCategorias}
                   </div>
+
                 </div>
 
               )}
@@ -764,7 +747,7 @@ export default function App() {
           element={<Login />}
         />
 
-        {/* MIS COMPRAS */}
+        {/* HISTORIAL DE COMPRAS */}
 
         <Route
           path="/mis-compras"
@@ -842,28 +825,26 @@ export default function App() {
           }
         >
 
-          {/* DASHBOARD REAL */}
+          {/* DASHBOARD */}
 
           <Route
             index
             element={<Dashboard />}
           />
 
-          {/* ORDENES REALES */}
+          {/* ORDENES DESDE MYSQL */}
 
           <Route
             path="ordenes"
             element={<Ordenes />}
           />
 
-          {/* DETALLE DE ORDEN ANTIGUO */}
-          {/* LO MIGRAREMOS EN OTRA ETAPA */}
+          {/* DETALLE DE BOLETA DESDE MYSQL */}
+          {/* YA NO NECESITA DATOS LOCALES */}
 
           <Route
             path="ordenes/:numero"
-            element={
-              <BoletaAdmin ordenes={ordenes} />
-            }
+            element={<BoletaAdmin />}
           />
 
           {/* ================================= */}
@@ -875,8 +856,7 @@ export default function App() {
             element={<UsuariosAdmin />}
           />
 
-          {/* RUTAS ANTIGUAS DE USUARIOS */}
-          {/* REDIRIGEN AL PANEL REAL */}
+          {/* REDIRECCIONES ANTIGUAS */}
 
           <Route
             path="usuarios/nuevo"
@@ -905,7 +885,9 @@ export default function App() {
           <Route
             path="productos"
             element={
-              <AdminProductos productos={productos} />
+              <AdminProductos
+                productos={productos}
+              />
             }
           />
 
@@ -986,5 +968,6 @@ export default function App() {
       </footer>
 
     </div>
+
   );
 }
